@@ -37,17 +37,18 @@ void parseGrammar() {
     grammar = grammar.substr(0, grammar.length() - 2);
 }
 
-Rule* parseRule(string ruleInput) {
+Rule parseRule(string ruleInput) {
     //add LHS and RHS onto respective vectors
     //read input up to ARROW and make that LHS
-    Rule* rule = new Rule();
+    Rule rule;
 
     //put this string rule into input buffer
     inputRule->UngetString(ruleInput);
 
     int count = 0;
     
-    lexRule.lexme = inputRule;
+    //lexical analyzer's token string = ruleInput
+    lexRule->GetToken().lexeme = ruleInput;
     
 
     /*
@@ -56,18 +57,17 @@ Rule* parseRule(string ruleInput) {
     */
     
     //get {LEFTHAND}
-    
-    rule->leftHand = ruleLex->GetToken().lexeme;
-    cout << rule->leftHand << endl;
+    rule.leftHand = lexRule->GetToken().lexeme;
+    cout << rule.leftHand << endl;
     //add to nonterminal directly, anything in lefthand will be nonterminal
-    Nonterminals.push_back(rule->leftHand);
+    Nonterminals.push_back(rule.leftHand);
     
     //get {ARROW}
     //inputRule->GetToken();
 
     //get {RIGHTHAND}
     while (!inputRule->EndOfInput()){
-        rule->rightHand.push_back(inputRule->GetToken().lexme);
+        rule.rightHand.push_back(lexRule->GetToken().lexeme);
     }
     
     //now return rule
@@ -78,9 +78,9 @@ void parseRuleList(){
     std::string tempGrammar = grammar;
     char star = '*';
     string ruleString = "";
-    Rule* thisRule;
+    Rule thisRule;
     
-    for (int i = 0; i < tempGrammer.length(); i++){
+    for (int i = 0; i < tempGrammar.length(); i++){
         if (tempGrammar[i] == star){
 
             //use parseRule to return one individual rule using ruleString
@@ -106,10 +106,13 @@ void ReadGrammar()
     cout << "0\n";
     cin >> readString;
 
+    cout << "readString: " << readString << endl;
+
     //get the grammar and store in grammar string variable
     parseGrammar();
     //put grammar string into input buffer to read through token by token
     inputGrammar->UngetString(grammar);
+    cout << "inputGrammar->UngetString(readString): " << inputGrammar->UngetString(grammar) << endl;
     
     //get list of rules and store in ruleList variable (a vector of rules)
     parseRuleList(); //will have to get each string and store in a rule (obejct) then put into class
@@ -124,13 +127,11 @@ void printTerminalsAndNoneTerminals()
     /*
         string nonTerminalList = "";
         string terminalList = "";
-
         int count = 1;
         
         //get first nonterminal because
         nonTerminalList += lex->GetToken().lexeme;
         nonTerminalList += " ";
-
         //gets the nonterminals into a list
         while(lex->peek(count + 1).token_type != END_OF_FILE) {
             //find the first star in the grammar
@@ -142,13 +143,10 @@ void printTerminalsAndNoneTerminals()
             //move through the input token by token
             count++;
         }
-
         //while loop to add the terminals to terminal list
         count = 0;
-
         cout << terminalList << endl;
         cout << nonTerminalList << endl;
-
         //read through the input to find the terminals
         while(lex->peek(count + 1).token_type != END_OF_FILE) {
             //if the token peeked is not STAR and it is not ARROW and it is not in the nonTerminalList, it is a terminal
@@ -156,7 +154,6 @@ void printTerminalsAndNoneTerminals()
                 !isElement(nonTerminalList, lex->peek(count).lexeme)) {
                     terminalList += lex->peek(count).lexeme + " ";
             }
-
             count++;
     }*/
 
@@ -170,13 +167,10 @@ void printTerminalsAndNoneTerminals()
 /*
 bool isElement(string list, string find) {
     bool isElement = false;
-
     char delimiter = ' ';
-
     int count = 0;
     string arr[100];
     int lastIndex = 0;
-
     //make array
     for (int i = 0; i < list.length(); i++) {
         if (list[i] == delimiter) {
@@ -190,14 +184,12 @@ bool isElement(string list, string find) {
     string word = list.substr(lastIndex, list.length() - lastIndex);
     arr[count] = word;
     count++;
-
     //find
     for(int i = 0; i < count; i++){
         if (arr[i] == find){
             isElement = true;
         }
     }
-
     return isElement;
 } */
 
@@ -273,4 +265,3 @@ int main (int argc, char* argv[])
     }
     return 0;
 }
-
