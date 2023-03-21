@@ -67,7 +67,13 @@ Rule parseRule(string ruleInput) {
 
     //get {RIGHTHAND}
     while (!inputRule->EndOfInput()){
-        rule.rightHand.push_back(lexRule->GetToken().lexeme);
+        if(lexRule->GetToken().token_type != ARROW) {
+            rule.rightHand.push_back(lexRule->GetToken().lexeme);
+        }
+        else {
+            lexRule->GetToken();
+        }
+        //rule.rightHand.push_back(lexRule->GetToken().lexeme);
     }
     
     //now return rule
