@@ -34,6 +34,8 @@ vector<int> indexRHS;
 vector<string> indexList; 
 vector<string> sortedNonterminals;
 
+
+
 int index(string target) {
     for(int i = 0; i < indexList.size(); i++) {
         if(indexList[i] == target) {
@@ -302,17 +304,70 @@ void RemoveUselessSymbols()
     
 }
 
+//recursive function to calculate firstSet
+string FirstSet(string firstSet[]) {
+    //go through the index and find first nonTerminal
+    for(int i = 0; i < indexList.size(); i++) {
+        if(!isInTerminal(indexList[i])) {
+            //go through each rule with LHS = indexList[i]
+            for(int j = 0; j < ruleList.size(); j++) {
+                if(ruleList[j].leftHand.lexeme == indexList[i]) {
+                    //if RHS if terminal, add to firstSet
+                    if(isInTerminal(ruleList[j].rightHand[0].lexeme)) {
+                        return firstSet[i] += ruleList[j].rightHand[0].lexeme;
+                    }
+                    //else add first of nonTerminal to firstSet[i]
+                    else {
+                        return firstSet[i] += firstSet[index(ruleList[j].rightHand[0].lexeme)];
+                    }  
+                }
+            }
+        }
+    }
+}
+
+//this doesn't check for repeats at the current moment
+string FirstSet(string variable, string firstSet[]) {
+
+    if(isInTerminal(variable)) { //base case where variable is a terminal
+        return;
+    }
+
+    //go through and find each rule with LHS = variable
+    for(int i = 0; i < ruleList.size(); i++) {
+        if(ruleList[i].leftHand.lexeme == variable) {
+            //check RHS
+            if(isInTerminal(ruleList[i].rightHand[0].lexeme)) { //terminal
+                firstSet[index(variable)] += ruleList[i].rightHand[0].lexeme;
+            }
+            else  { //nonTerminal
+                firstSet[index(variable)] += FirstSet(ruleList[i].rightHand[0].lexeme, firstSet);
+            }
+        }
+    }
+}
 
 // Task 3
 void CalculateFirstSets()
 {
     std::cout << "3\n";
 
+    string firstSet[indexList.size()];
+
     //S->ABC, FIRST(S) = FIRST(A)
     //if FIRST(A) contains epsilon, FIRST(S) = FIRST(A) - epislon U FIRST(B)
 
-    vector<string>  firstSets;
+    //firstSets of all terminals should be the terminal
+    for(int i = 0; i < indexList.size(); i++) {
+        if(isInTerminal(indexList[i])) {
+            firstSet[i] == indexList[i];
+        }
+    }
 
+    //go through indexList and calculate each firstSet
+    for(int i = 0; i < indexList.size(); i++) {
+        FirstSet(indexList[i], firstSet);
+    }
 
 }
 
@@ -372,3 +427,4 @@ int main (int argc, char* argv[])
     }
     return 0;
 }
+
