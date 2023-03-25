@@ -515,7 +515,21 @@ void RemoveUselessSymbols()
     
 }
 
-
+//one last attempt at a recursive function
+//I believe this is my best attempt yet
+string fuckingBitch(string variable, string set) {
+    if(isInTerminal(variable)) {
+        set += variable;
+    }
+    else {
+        for(int i = 0; i < ruleList.size(); i++) {
+            if(ruleList[i].leftHand.lexeme == variable) {
+                set += fuckingBitch(ruleList[i].rightHand[0].lexeme, set);
+            }
+        }
+    }
+    return set;
+}
 
 //use ruleList
 void FirstSet(string variable, string firstSetList[]) {
@@ -551,6 +565,12 @@ void CalculateFirstSets()
         for(int i = 0; i < indexList.size(); i++) {
             FirstSet(indexList[i], firstSet);
         }
+    }
+
+
+    //loop to run the recursive function, assuming firstSet is all null again
+    for(int i = 0; i < indexList.size(); i++) {
+        fuckingBitch(indexList[i], firstSet[i]);
     }
 
 
