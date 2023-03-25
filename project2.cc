@@ -300,14 +300,11 @@ void RemoveUselessSymbols()
     //
 
     /*
-
     vector<Rule> reachableRules;
     vector<string> reachableNonterminals;
     //  ---------------------------
-
     cout << "----STARTING RULES----" << endl;
     printRules(ruleList);
-
     //
     //  ----get first rule in reachable----
     //this is final list we use to print
@@ -323,27 +320,20 @@ void RemoveUselessSymbols()
             reachableNonterminals.push_back(firstRule.rightHand[i].lexeme);
         }
     }
-
     //
     //  ----look at rest of rules----
     //for each rule
     for (int j = 1; j < ruleList.size(); j++) {
-
         Rule iterator = ruleList[j];
         string left = iterator.leftHand.lexeme;
-
         vector<Token> right = iterator.rightHand;
-
         //if lhs is in reachable nonterminals
         if (find(reachableNonterminals.begin(), reachableNonterminals.end(), left) != reachableNonterminals.end()) {
             //  ----add rule----
             reachableRules.push_back(iterator);
-
             //  dont add lhs again, would be repeated
-
             //  ----add rhs----
             //add all of rhs (nonterminals)
-
             for (int i = 0; i < right.size(); i++){
                 //if this rhs is a nonterminal and not already in reachable, add
                 if (find(Nonterminals.begin(), Nonterminals.end(), firstRule.rightHand[i].lexeme) != Nonterminals.end()
@@ -351,7 +341,6 @@ void RemoveUselessSymbols()
                     reachableNonterminals.push_back(right[i].lexeme);
                 }
             }
-
         }
     }
     
@@ -457,19 +446,11 @@ void RemoveUselessSymbols()
     //
     //  ----GENERATING RULES----
     //
-
     //for each rule not in reaching
     for (int i = 0; i < ruleList.size(); i++){
         const Rule thisRule = ruleList[i];
         //if this rule is not in reachable
-
-
-
         //errors here, comparing pointer == nonpointer
-
-
-
-
         if (find(reachableRules.begin(), reachableRules.end(), thisRule) != reachableRules.end()){
             cout << "rule is not in reachable yet: " << endl;
             printRule(thisRule);
@@ -484,19 +465,14 @@ void RemoveUselessSymbols()
             }
         }
     }
-
-
     bool generating[indexList.size()];
-
     //set all terminals to generating
     for(int i = 0; i < indexList.size(); i++) {
         if(isInTerminal(indexList[i]) || indexList[i] == "#" || indexList[i] == "$") {
             generating[i] = true;
         }
     }
-
     bool change = true;
-
     while(change) {
         //go through each rule and check if the RHS is all generating all terminals
         //if it is change the LHS variable to True
@@ -511,7 +487,6 @@ void RemoveUselessSymbols()
             }
         }
     }
-
     //remove any rules with a non generating symbol
     //create a generating vector
     vector<Rule> generatingRules;
@@ -529,12 +504,10 @@ void RemoveUselessSymbols()
                 generatingRules.push_back(ruleList[i]);
         }
     }
-
     //print out generating rules
     for(int i = 0; i < generatingRules.size(); i ++) {
         printRules(generatingRules);
     }
-
     */
 
 
@@ -542,48 +515,19 @@ void RemoveUselessSymbols()
     
 }
 
-// //recursive function to calculate firstSet
-// string FirstSet(string firstSet[]) {
-//     //go through the index and find first nonTerminal
-//     for(int i = 0; i < indexList.size(); i++) {
-//         if(!isInTerminal(indexList[i])) {
-//             //go through each rule with LHS = indexList[i]
-//             for(int j = 0; j < ruleList.size(); j++) {
-//                 if(ruleList[j].leftHand.lexeme == indexList[i]) {
-//                     //if RHS if terminal, add to firstSet
-//                     if(isInTerminal(ruleList[j].rightHand[0].lexeme)) {
-//                         return firstSet[i] += ruleList[j].rightHand[0].lexeme;
-//                     }
-//                     //else add first of nonTerminal to firstSet[i]
-//                     else {
-//                         return firstSet[i] += firstSet[index(ruleList[j].rightHand[0].lexeme)];
-//                     }  
-//                 }
-//             }
-//         }
-//     }
-// }
-
-// //this doesn't check for repeats at the current moment
-// string FirstSet(string variable, string firstSet[]) {
-
-//     if(isInTerminal(variable)) { //base case where variable is a terminal
-//         return;
-//     }
-
-//     //go through and find each rule with LHS = variable
-//     for(int i = 0; i < ruleList.size(); i++) {
-//         if(ruleList[i].leftHand.lexeme == variable) {
-//             //check RHS
-//             if(isInTerminal(ruleList[i].rightHand[0].lexeme)) { //terminal
-//                 firstSet[index(variable)] += ruleList[i].rightHand[0].lexeme;
-//             }
-//             else  { //nonTerminal
-//                 firstSet[index(variable)] += FirstSet(ruleList[i].rightHand[0].lexeme, firstSet);
-//             }
-//         }
-//     }
-// }
+//use ruleList
+string FirstSet(string variable, string firstSetList[]) {
+    for(int i = 0; i < ruleList.size(); i++) {
+        if(ruleList[i].leftHand.lexeme == variable) {
+            if(isInTerminal(ruleList[i].rightHand[0].lexeme)) {
+                firstSetList[index(variable)] += ruleList[i].rightHand[0].lexeme + " ";
+            }
+            else {
+                firstSetList[index(variable)] += firstSetList[index(ruleList[i].rightHand[0].lexeme)];
+            }
+        }
+    }
+}
 
 // Task 3
 void CalculateFirstSets()
@@ -593,16 +537,21 @@ void CalculateFirstSets()
     //if FIRST(A) contains epsilon, FIRST(S) = FIRST(A) - epislon U FIRST(B)
 
     //firstSets of all terminals should be the terminal
-    // for(int i = 0; i < indexList.size(); i++) {
-    //     if(isInTerminal(indexList[i])) {
-    //         firstSet[i] = indexList[i];
-    //     }
-    // }
+    for(int i = 0; i < indexList.size(); i++) {
+        if(isInTerminal(indexList[i])) {
+            firstSet[i] = indexList[i];
+        }
+    }
 
-    // //go through indexList and calculate each firstSet
-    // for(int i = 0; i < indexList.size(); i++) {
-    //     FirstSet(indexList[i], firstSet);
-    // }
+    //go through the full index list, in order to make sure there is full coverage, 
+    //you need to go through the indexList NonTerminalLsit.size() times
+    for(int j = 0; j < Nonterminals.size(); j++) {
+        for(int i = 0; i < indexList.size(); i++) {
+            FirstSet(indexList[i], firstSet);
+        }
+    }
+
+
 }
 
 // Task 4
@@ -672,4 +621,3 @@ int main (int argc, char* argv[])
     }
     return 0;
 }
-
