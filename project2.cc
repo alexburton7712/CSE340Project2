@@ -515,8 +515,10 @@ void RemoveUselessSymbols()
     
 }
 
+
+
 //use ruleList
-string FirstSet(string variable, string firstSetList[]) {
+void FirstSet(string variable, string firstSetList[]) {
     for(int i = 0; i < ruleList.size(); i++) {
         if(ruleList[i].leftHand.lexeme == variable) {
             if(isInTerminal(ruleList[i].rightHand[0].lexeme)) {
