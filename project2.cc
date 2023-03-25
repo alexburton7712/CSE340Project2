@@ -5,38 +5,52 @@
  */
 #include <iostream>
 #include <cstdio>
-#include <string>
 #include <cstdlib>
-#include <fstream>
 #include "lexer.h"
-#include "inputbuf.h"
 
 using namespace std;
 
-string readString;
-string grammar;
 
 LexicalAnalyzer* lexGrammar = new LexicalAnalyzer();
-
 class Rule {
     public:
         Token leftHand;
         std::vector<Token> rightHand;
 };
 
-//standard, using throughout 
+//
+//  ----LISTS----
+//
 vector<Rule> ruleList;
 vector<int> indexLHS;
 vector<int> indexRHS;
 vector<string> indexList; 
-vector<string> sortedNonterminals;
-
-//mainly for task 1
 vector<string> Terminals;
 vector<string> Nonterminals;
+vector<string> sortedNonterminals;
 
 
-//printing functions, for debugging
+//
+//  ----HELPER FUNCTIONS----
+//
+int index(string target) {
+    for(int i = 0; i < indexList.size(); i++) {
+        if(indexList[i] == target) {
+            return i;
+        }
+    }
+    return -1;
+}
+int goToRuleLeft(string lhs){
+    //given a string, find which index in ruleList it is 
+    //defined (or on left side)
+    for(int i = 0; i < ruleList.size(); i++) {
+        if(ruleList[i].leftHand.lexeme == lhs) {
+            return i;
+        }
+    }
+    return -1;
+}
 void printRule(Rule thisRule) {
     cout << thisRule.leftHand.lexeme  << " -> ";
 
@@ -57,18 +71,6 @@ void printRules(vector<Rule> list) {
 
 }
 
-
-
-int index(string target) {
-    for(int i = 0; i < indexList.size(); i++) {
-        if(indexList[i] == target) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-//tells if it is an element in given list
 bool isInNonterminals(string target) {
     for(int i = 0; i < Nonterminals.size(); i++) {
         if(Nonterminals[i] == target) {
@@ -77,7 +79,6 @@ bool isInNonterminals(string target) {
     }
     return false;
 }
-
 bool isElement(string target, vector<Rule> list) {
     for(int i = 0; i < list.size(); i ++) {
         if(list[i].leftHand.lexeme == target) {
@@ -86,7 +87,6 @@ bool isElement(string target, vector<Rule> list) {
     }
     return false;
 }
-
 bool isElement(string target, vector<string> list) {
     for(int i = 0; i < list.size(); i++) {
         if(target == list[i]) {
@@ -95,7 +95,6 @@ bool isElement(string target, vector<string> list) {
     }
     return false;
 }
-
 bool isInTerminal(string target) {
     for(int i = 0; i < Terminals.size(); i++) {
         if(Terminals[i] == target) {
@@ -105,7 +104,286 @@ bool isInTerminal(string target) {
     return false;
 }
 
-//for task 2 and 5
+bool rhsTrue(bool generating[], vector<Token> rhs) {
+    for(int i = 0; i < rhs.size(); i++) {
+        if(!generating[index(rhs[i].lexeme)]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
+
+//mainly for task 1
+void makeTerminals(){
+    //iterate through full ruleList
+    for(int i = 0; i < ruleList.size(); i++) { //for each rule's right hand
+
+        for(int j = 0; j < ruleList[i].rightHand.size(); j++) { //for each right hand id
+            
+            //if this RHS is not a nonterminal, add to terminals and make sure no repeat
+            if(!isInNonterminals(ruleList[i].rightHand[j].lexeme) && !isInTerminal(ruleList[i].rightHand[j].lexeme)) {
+                Terminals.push_back(ruleList[i].rightHand[j].lexeme);
+            }
+            //if in nonterminals, is a nonterminal
+        }
+    }
+    //  ----we now have complete terminals list (no repeats)----
+}
+void makeNonterminals(){
+    //making terminals and nonterminals 
+        //{NONTERMINAL} --> {TERMINAL}*
+        //----formatting
+        //Terminals first, then nontemrinals are printed all in one line
+        //  ----make nonterminal list - easy just make sure no repeats----
+
+    //first add the first LHS into non terminals
+    Nonterminals.push_back(ruleList[0].leftHand.lexeme);
+
+    //now add the rest
+    for(int i = 1; i < ruleList.size(); i++) { //for each rule's left hand
+        //if not in nonterminals already, add
+        if (!isInNonterminals(ruleList[i].leftHand.lexeme)){
+            Nonterminals.push_back(ruleList[i].leftHand.lexeme);
+        }//if in nonterminals, dont add, its a repeat
+    }  
+    //  ----we now have complete nonterminals list (no repeats)---- 
+      
+}
+
+//mainly for task 2
+vector<bool> makeReachableList(){
+    //make vector of bools, corresponds with rule list - for reachable
+    vector<bool> reachable(ruleList.size(), false); 
+    //starting will be the one to be reached
+    reachable[0] = true;
+
+    //for each rule
+    for (int i = 0; i < ruleList.size(); i++) {
+
+        Rule thisRule = ruleList[i];
+
+        //if this rule is reachable 
+        if (reachable[i]) {
+            
+            //make all other rules that start with thisRule.lhs reachable
+            for (int j = 0; j < ruleList.size(); j++) {
+                Rule iterating = ruleList[j];
+                if (iterating.leftHand.lexeme == thisRule.leftHand.lexeme){
+                    reachable[j] = true;
+                }
+            }
+
+            //for each rhs
+            for (int j = 0; j < thisRule.rightHand.size(); j++) {
+                Token right = thisRule.rightHand[j];
+                //if this rhs is a nonterminal and not already in reachable, make this rule reachable
+                if (isInNonterminals(right.lexeme)) {
+                    //go through list
+                    for (int k = 0; k < ruleList.size(); k++){
+                        Rule iterating = ruleList[k];
+                        //if this rule's LHS is the right, reachable
+                        if (right.lexeme == iterating.leftHand.lexeme){
+                            reachable[k] = true;
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+    return reachable;
+}
+vector<bool> makeGeneratableList(){
+    //make vector of bools, corresponds with rule list - for generatable
+    vector<bool> generatable(ruleList.size(), false);
+
+    for (int n = 0; n < ruleList.size(); n++) {
+        //for each rule
+        for (int i = 0; i < ruleList.size(); i++) {
+
+            Rule thisRule = ruleList[i];
+
+            if (thisRule.rightHand.size() == 0){
+                generatable[i] = true;
+            }
+            else{
+                //bool to keep track that all are terminals
+                bool allGeneratable = true;
+                //for each rhs
+                for (int j = 0; j < thisRule.rightHand.size(); j++) {
+                    Token token = thisRule.rightHand[j];
+                    //if this rhs is a nonterminal, and not generating, stop
+                    if (isInNonterminals(token.lexeme) && !generatable[goToRuleLeft(token.lexeme)]) {
+                        allGeneratable = false;
+                        break;
+                    }
+                }
+                //now done going through rhs
+                if (allGeneratable == true) {
+                    //if they are all terminals, make this rule generatable
+                    generatable[i] = true;
+                }
+            }
+        }
+    }
+
+    return generatable;
+}
+vector<bool> makeUsefulList(vector<bool> reachable, vector<bool> generatable){
+    
+    vector<bool> useful(ruleList.size(), false);
+/*
+    // for (int i = 0; i < ruleList.size(); i++){
+
+    //     Rule thisRule = ruleList[i];
+
+    //     if (reachable[goToRuleLeft(thisRule.leftHand.lexeme)] == 1){
+    //         bool allGeneratable = true;
+
+    //         for (int j = 0; j < thisRule.rightHand.size(); j++){
+
+    //             Token thisRHS = thisRule.rightHand[j];
+    //             //if this rhs is a nonterminal
+    //             if (isInNonterminals(thisRHS.lexeme)){
+    //                 //check if in generatable
+    //                     //generatable at the index where this RHS is a LHS (rule starter), if false
+    //                 if (generatable[goToRuleLeft(thisRHS.lexeme)] == 0){
+    //                     allGeneratable = false;
+    //                     break;
+    //                 }
+    //                 //else continue, its fine
+    //             }
+    //             //else is a terminal
+    //         }
+
+    //         if (allGeneratable == true){
+    //             useful[i] = true;
+    //         }
+    //     }
+
+        
+    // }
+*/
+    //first get all generating rules
+    bool allFalse = true;
+    for (int i = 0; i < ruleList.size(); i++){
+        if (generatable[i]){
+            useful[i] = true;
+            allFalse = false;
+        }
+    }
+    if (allFalse == true){
+        return useful;
+    }
+
+
+    //first get all reaching rules
+    for (int i = 0; i < ruleList.size(); i++){
+        if (reachable[i]){
+            bool usefulBool = true;
+            //for each rhs
+            for (int j = 0; j < ruleList[i].rightHand.size(); j++){
+                //if not generating nonterminal, stop - where this rhs is defined (on lhs) is it generating
+                    //i realized there can be multiple rules for one id....
+                if (isInNonterminals(ruleList[i].rightHand[j].lexeme) && generatable[goToRuleLeft(ruleList[i].rightHand[j].lexeme)] == 0){
+                    usefulBool = false;
+                    break;
+
+                    // //get reapeats
+                    // //if this rhs is the same a the next one and the next, make 
+                    // for (int k = j + 1; k < ruleList[i].rightHand.size(); k++){
+                    //     if (ruleList[i].rightHand[j].lexeme == ruleList[i].rightHand[k].lexeme)
+                    // }
+
+                }
+                else if (isInTerminal(ruleList[i].rightHand[j].lexeme)){
+                    continue;
+                }
+            }
+            if (usefulBool){
+                useful[i] = true;
+            }
+            //useful[i] = true;
+        }
+        else{
+            useful[i] = false;
+        }
+    }
+
+    /*
+    //for each rule
+    for (int i = 0; i < ruleList.size(); i++) {
+
+        Rule thisRule = ruleList[i];
+        
+        //if this rule is generatable and reachable, mark it as useful
+        if (reachable[i]) {
+            bool allUseful = true;
+            //for each rhs
+            for (int j = 0; j < thisRule.rightHand.size(); j++) {
+                Token right = thisRule.rightHand[j];
+
+                //if this rhs is a nonterminal and not already generatable, check if it's useful
+                if (isInNonterminals(right.lexeme) && !generatable[index(right.lexeme)]) {
+                    
+                    bool allGeneratable = true;
+                    //go through rhs
+                    for (int k = 0; k < thisRule.rightHand.size(); k++){
+                        Token token = thisRule.rightHand[k];
+                        //if token is nonterminal and not generatable
+                        if (isInNonterminals(token.lexeme) && !generatable[index(token.lexeme)]) {
+                            allGeneratable = false;
+                            break;
+                        }
+                    }
+                    //if all tokens are generatable, mark this rule as useful
+                    if (allGeneratable) {
+                        useful[i] = true;
+                        generatable[index(right.lexeme)] = true;
+                    }
+                }
+            }
+        }
+        
+    }*/
+    return useful;
+}
+
+//mainly for task 3
+string fuckingBitch(string variable, string set) {
+    //one last attempt at a recursive function
+    //I believe this is my best attempt yet
+    if(isInTerminal(variable)) {
+        set += variable;
+    }
+    else {
+        for(int i = 0; i < ruleList.size(); i++) {
+            if(ruleList[i].leftHand.lexeme == variable) {
+                set += fuckingBitch(ruleList[i].rightHand[0].lexeme, set);
+            }
+        }
+    }
+    return set;
+}
+void FirstSet(string variable, string firstSetList[]) {
+    for(int i = 0; i < ruleList.size(); i++) {
+        if(ruleList[i].leftHand.lexeme == variable) {
+            if(isInTerminal(ruleList[i].rightHand[0].lexeme)) {
+                firstSetList[index(variable)] += ruleList[i].rightHand[0].lexeme + " ";
+            }
+            else {
+                firstSetList[index(variable)] += firstSetList[index(ruleList[i].rightHand[0].lexeme)];
+            }
+        }
+    }
+}
+
+
+
+//mainly for task 5
 bool HasUselessRules() {
     vector<bool> reachable(ruleList.size(), false);
     reachable[0] = true; // start symbol is always reachable
@@ -137,7 +415,6 @@ bool HasUselessRules() {
         return true;
     }
 }
-
 bool HasLeftRecursion() {
     //for each nonterminal
     for (int i = 0; i < Nonterminals.size(); i++) {
@@ -156,6 +433,9 @@ bool HasLeftRecursion() {
     //no left recursion found
     return false;
 }
+
+
+
 
 // read grammar
 void ReadGrammar()
@@ -221,37 +501,10 @@ void ReadGrammar()
         //now have complete rule list 
         
     }
-    //making terminals and nonterminals 
-        //{NONTERMINAL} --> {TERMINAL}*
-        //----formatting
-        //Terminals first, then nontemrinals are printed all in one line
-        //  ----make nonterminal list - easy just make sure no repeats----
 
-    //first add the first LHS into non terminals
-    Nonterminals.push_back(ruleList[0].leftHand.lexeme);
+    makeNonterminals();
+    makeTerminals();
 
-    //now add the rest
-    for(int i = 1; i < ruleList.size(); i++) { //for each rule's left hand
-        //if not in nonterminals already, add
-        if (!isInNonterminals(ruleList[i].leftHand.lexeme)){
-            Nonterminals.push_back(ruleList[i].leftHand.lexeme);
-        }//if in nonterminals, dont add, its a repeat
-    }  
-    //  ----we now have complete nonterminals list (no repeats)---- 
-      
-    //iterate through full ruleList
-    for(int i = 0; i < ruleList.size(); i++) { //for each rule's right hand
-
-        for(int j = 0; j < ruleList[i].rightHand.size(); j++) { //for each right hand id
-            
-            //if this RHS is not a nonterminal, add to terminals and make sure no repeat
-            if(!isInNonterminals(ruleList[i].rightHand[j].lexeme) && !isInTerminal(ruleList[i].rightHand[j].lexeme)) {
-                Terminals.push_back(ruleList[i].rightHand[j].lexeme);
-            }
-            //if in nonterminals, is a nonterminal
-        }
-    }
-    //  ----we now have complete terminals list (no repeats)----
 
     //INDEX METHOD for sorting
     for(int i = 0; i < indexList.size(); i++) {
@@ -277,272 +530,48 @@ void printTerminalsAndNoneTerminals()
     }
 }
 
-bool rhsTrue(bool generating[], vector<Token> rhs) {
-    for(int i = 0; i < rhs.size(); i++) {
-        if(!generating[index(rhs[i].lexeme)]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-
 // Task 2
 void RemoveUselessSymbols()
 {
-    //remove any rules that are A->episolon
-    //go through the grammar if there are any RHS that are *, that is an epsilon rule and needs to be removed
-    //remove any unaccessible rules S->AB, C->c, A->a, B->b: remove C->c
+    vector<bool> reachableList = makeReachableList();
+    vector<bool> generatableList = makeGeneratableList();
+    vector<bool> usefulList = makeUsefulList(reachableList, generatableList);
 
-    //
-    //  ----REACHABLE TERMINALS----
-    //
-
-    /*
-    vector<Rule> reachableRules;
-    vector<string> reachableNonterminals;
-    //  ---------------------------
-    cout << "----STARTING RULES----" << endl;
-    printRules(ruleList);
-    //
-    //  ----get first rule in reachable----
-    //this is final list we use to print
-    Rule firstRule = ruleList[0];
-    //add first rule
-    reachableRules.push_back(firstRule);
-    //
-    reachableNonterminals.push_back(firstRule.leftHand.lexeme);
-    //add all of rhs (nonterminals)
-    for (int i = 0; i < firstRule.rightHand.size(); i++){
-        //add to reachableList
-        if (find(Nonterminals.begin(), Nonterminals.end(), firstRule.rightHand[i].lexeme) != Nonterminals.end()){
-            reachableNonterminals.push_back(firstRule.rightHand[i].lexeme);
-        }
+    cout << "reachableList: " << endl;
+    for (int i = 0; i < reachableList.size(); i++){
+        cout << reachableList[i] << " ";
     }
-    //
-    //  ----look at rest of rules----
-    //for each rule
-    for (int j = 1; j < ruleList.size(); j++) {
-        Rule iterator = ruleList[j];
-        string left = iterator.leftHand.lexeme;
-        vector<Token> right = iterator.rightHand;
-        //if lhs is in reachable nonterminals
-        if (find(reachableNonterminals.begin(), reachableNonterminals.end(), left) != reachableNonterminals.end()) {
-            //  ----add rule----
-            reachableRules.push_back(iterator);
-            //  dont add lhs again, would be repeated
-            //  ----add rhs----
-            //add all of rhs (nonterminals)
-            for (int i = 0; i < right.size(); i++){
-                //if this rhs is a nonterminal and not already in reachable, add
-                if (find(Nonterminals.begin(), Nonterminals.end(), firstRule.rightHand[i].lexeme) != Nonterminals.end()
-                    && find(reachableNonterminals.begin(), reachableNonterminals.end(), right[i].lexeme) == reachableNonterminals.end()){
-                    reachableNonterminals.push_back(right[i].lexeme);
-                }
-            }
-        }
+    cout << endl;
+    cout << "generatableList: " << endl;
+    for (int i = 0; i < generatableList.size(); i++){
+        cout << generatableList[i] << " ";
     }
-    
-    */
-
-    //
-    //  ----REACHABLE TERMINALS----
-    //
-
-    //make vector of bools, corresponds with rule list - for reachable
-    vector<bool> reachable(ruleList.size(), false); 
-    //starting will be the one to be reached
-    reachable[0] = true;
-
-    //for each rule
-    for (int i = 0; i < ruleList.size(); i++) {
-
-        Rule thisRule = ruleList[i];
-        //if this rule is reachable 
-        if (reachable[i]) {
-            //for each rhs
-            for (int j = 0; j < thisRule.rightHand.size(); j++) {
-                Token token = thisRule.rightHand[j];
-                //if this rhs is a nonterminal and not already in reachable, make this rule reachable
-                if (isInNonterminals(token.lexeme) && !reachable[index(token.lexeme)]) {
-                    reachable[index(token.lexeme)] = true;
-                }
-            }
-        }
+    cout << endl;
+    cout << "usefulList: " << endl;
+    for (int i = 0; i < usefulList.size(); i++){
+        cout << usefulList[i] << " ";
     }
-
-    //make vector of bools, corresponds with rule list - for generatable
-    vector<bool> generatable(Nonterminals.size(), false);
-
-    //for each rule
-    for (int i = 0; i < ruleList.size(); i++) {
-
-        Rule thisRule = ruleList[i];
-        //bool to keep track that all are terminals
-        bool allTerminals = true;
-        //for each rhs
-        for (int j = 0; j < thisRule.rightHand.size(); j++) {
-            Token token = thisRule.rightHand[j];
-            //if this rhs is a nonterminal, and not terminals
-            if (isInNonterminals(token.lexeme)) {
-                //set to false, end
-                allTerminals = false;
-                break;
-            }
-        }
-        //now done going through rhs
-        if (allTerminals) {
-            //if they are all terminals, make this rule generatable
-            generatable[index(thisRule.leftHand.lexeme)] = true;
-        }
-    }
-
-
-    //vector of bools for usefule rules - corresponds with rule list, now we get both
-    vector<bool> useful(ruleList.size(), false);
-    //for each rule
-    for (int i = 0; i < ruleList.size(); i++) {
-        Rule thisRule = ruleList[i];
-
-        //if its reachable
-        if (reachable[i]) {
-            //keep track all usefule
-            bool allUseful = true;
-
-            //for each rhs
-            for (int j = 0; j < thisRule.rightHand.size(); j++) {
-                Token token = thisRule.rightHand[j];
-                //if it is a nonterminal and not generatable, it is not useful
-                if (isInNonterminals(token.lexeme) && !generatable[index(token.lexeme)]) {
-                    allUseful = false;
-                    break;
-                }
-            }
-
-            //if all usefule stands, make this a useful rule
-            if (allUseful) {
-                useful[i] = true;
-            }
-        }
-    }
+    cout << endl;
 
     //printing, for each rule, 
     for (int i = 0; i < ruleList.size(); i++) {
         //if usefule, print
-        if (useful[i]) {
+        if (usefulList[i]) {
             Rule thisRule = ruleList[i];
             cout << thisRule.leftHand.lexeme << " -> ";
-            for (int j = 0; j < thisRule.rightHand.size(); j++) {
-                Token token = thisRule.rightHand[j];
-                cout << token.lexeme << " ";
+            if (thisRule.rightHand.size() == 0){
+                cout << "#";
+            }
+            else{
+                for (int j = 0; j < thisRule.rightHand.size(); j++) {
+                    Token token = thisRule.rightHand[j];
+                    cout << token.lexeme << " ";
+                }
             }
             cout << endl;
         }
     }
 
-            
-         /*   
-    //
-    //  ----GENERATING RULES----
-    //
-    //for each rule not in reaching
-    for (int i = 0; i < ruleList.size(); i++){
-        const Rule thisRule = ruleList[i];
-        //if this rule is not in reachable
-        //errors here, comparing pointer == nonpointer
-        if (find(reachableRules.begin(), reachableRules.end(), thisRule) != reachableRules.end()){
-            cout << "rule is not in reachable yet: " << endl;
-            printRule(thisRule);
-            //rule is not in reachable yet
-            //check if rhs is only terminals
-            for (int j = 0; j < thisRule.rightHand.size(); j++){
-                //if in terminals
-                if (find(Terminals.begin(), Terminals.end(), thisRule.rightHand[j].lexeme) == Terminals.end()){
-                    cout << "this is not a terminal, end: " << thisRule.rightHand[j].lexeme << endl;
-                    break;
-                }
-            }
-        }
-    }
-    bool generating[indexList.size()];
-    //set all terminals to generating
-    for(int i = 0; i < indexList.size(); i++) {
-        if(isInTerminal(indexList[i]) || indexList[i] == "#" || indexList[i] == "$") {
-            generating[i] = true;
-        }
-    }
-    bool change = true;
-    while(change) {
-        //go through each rule and check if the RHS is all generating all terminals
-        //if it is change the LHS variable to True
-        for(int i = 0; i < ruleList.size(); i++) {//goes through each rule
-            for(int j = 0; j < ruleList[i].rightHand.size(); j++) { //go through the RHS of each rule
-                if(rhsTrue(generating, ruleList[i].rightHand)) { //if the full RHS is true set the left hadn side variable to true
-                    generating[index(ruleList[i].leftHand.lexeme)] = true;
-                }
-                else{
-                    change = false;
-                }
-            }
-        }
-    }
-    //remove any rules with a non generating symbol
-    //create a generating vector
-    vector<Rule> generatingRules;
-    //go through the rule list and add any rules that are generating to the vector
-    for(int i = 0; i < ruleList.size(); i++) {
-        if(generating[index(ruleList[i].leftHand.lexeme)]) {
-            cout << "HERE1" << endl;
-        }
-        if(isElement(ruleList[i].leftHand.lexeme, generatingRules)) {
-            cout << "HERE2" << endl;
-        }
-        //if it is a generating rule, add it to the generatingRuleList && check for repeats
-        if(generating[index(ruleList[i].leftHand.lexeme)] == true && 
-            isElement(ruleList[i].leftHand.lexeme, generatingRules)) {
-                generatingRules.push_back(ruleList[i]);
-        }
-    }
-    //print out generating rules
-    for(int i = 0; i < generatingRules.size(); i ++) {
-        printRules(generatingRules);
-    }
-    */
-
-
-
-    
-}
-
-//one last attempt at a recursive function
-//I believe this is my best attempt yet
-string fuckingBitch(string variable, string set) {
-    if(isInTerminal(variable)) {
-        set += variable;
-    }
-    else {
-        for(int i = 0; i < ruleList.size(); i++) {
-            if(ruleList[i].leftHand.lexeme == variable) {
-                set += fuckingBitch(ruleList[i].rightHand[0].lexeme, set);
-            }
-        }
-    }
-    return set;
-}
-
-//use ruleList
-void FirstSet(string variable, string firstSetList[]) {
-    for(int i = 0; i < ruleList.size(); i++) {
-        if(ruleList[i].leftHand.lexeme == variable) {
-            if(isInTerminal(ruleList[i].rightHand[0].lexeme)) {
-                firstSetList[index(variable)] += ruleList[i].rightHand[0].lexeme + " ";
-            }
-            else {
-                firstSetList[index(variable)] += firstSetList[index(ruleList[i].rightHand[0].lexeme)];
-            }
-        }
-    }
 }
 
 // Task 3
@@ -573,13 +602,15 @@ void CalculateFirstSets()
         fuckingBitch(indexList[i], firstSet[i]);
     }
 
-
+    for (int i = 0; i < firstSet->size(); i++){
+        cout << firstSet[i] << endl;
+    }
 }
 
 // Task 4
 void CalculateFollowSets()
 {
-    std::cout << "4\n";
+    cout << "4\n";
 }
 
 // Task 5
@@ -606,7 +637,7 @@ int main (int argc, char* argv[])
 
     if (argc < 2)
     {
-        std::cout << "Error: missing argument\n";
+        cout << "Error: missing argument\n";
         return 1;
     }
 
@@ -638,8 +669,9 @@ int main (int argc, char* argv[])
             break;
 
         default:
-            std::cout << "Error: unrecognized task number " << task << "\n";
+            cout << "Error: unrecognized task number " << task << "\n";
             break;
     }
     return 0;
 }
+
