@@ -114,8 +114,6 @@ bool rhsTrue(bool generating[], vector<Token> rhs) {
 }
 
 
-
-
 //mainly for task 1
 void makeTerminals(){
     //iterate through full ruleList
@@ -375,13 +373,12 @@ void RemoveUselessSymbols()
         }
     }
  
-
     //  ---STEP 3: ADD GENERATING LHS TO GENERATING RULES----
     vector<bool> generatableList(ruleList.size(), false); //use this for cross reference
     //go through the rule list and add any rules that are generating to the vector
     for(int i = 0; i < ruleList.size(); i++) {
         //if it is a generating rule's lhs, add it to the generatingRuleList
-        if(generating[index(ruleList[i].leftHand.lexeme)]) {
+        if(generating[index(ruleList[i].leftHand.lexeme)] && rhsTrue(generating, ruleList[i].rightHand)) {
             generatableList[i] = true;
         }
     }
@@ -391,32 +388,42 @@ void RemoveUselessSymbols()
     //
 
     //  ---STEP 4: MAKE FIRST SYMBOL REACHABLE----
-    bool reachable[indexList.size()];
-    
+    bool reachableForRemoving[indexList.size()];
+    //first make all false
+    for (int i = 0; i < indexList.size(); i++) {
+        reachableForRemoving[i] = false;
+    }
     //save start symbol
-    string startSymbol = ruleList[0].leftHand.lexeme;
-    //start symbol will always be reachable
-    reachable[index(startSymbol)] = true;
+    string startSymbol = "not";
+    //start symbol is first rule that is generating 
+    for(int i = 0; i < ruleList.size(); i++) {
+        startSymbol = ruleList[i].leftHand.lexeme;
+        if (generating[index(startSymbol)]){
+            reachableForRemoving[index(startSymbol)] = true;
+            break;
+        }
+    }
 
     //  ---STEP 5: FIND REACHABLE RULES----
-    for(int i = 0; i < ruleList.size(); i++) {
-
-        for (int i = 0; i < indexList.size(); i++){
-            cout << reachable[i] << " ";
-        }
-        cout << endl;
-        
-        //if this rule's lhs is reachable
-        //go through the rest of the rules and any RHS with a reachable LHS will become reachable
-        if(reachable[index(ruleList[i].leftHand.lexeme)]) {
-            cout << "is reachable: " << ruleList[i].leftHand.lexeme << endl;
-            if (ruleList[i].rightHand.size() == 0){
-                reachable[index("#")] = true;
-            }
-            else{
-                //for each rhs, make reachable
+    for(int n = 0; n < ruleList.size(); n++) {
+        for(int i = 0; i < ruleList.size(); i++) {
+            
+            //if this rule's lhs is reachable
+            //go through the rest of the rules and any RHS with a reachable LHS will become reachable
+            if (!generatableList[i]){
                 for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
-                    reachable[index(ruleList[i].rightHand[j].lexeme)] = true;
+                    reachableForRemoving[index(ruleList[i].rightHand[j].lexeme)] = true;
+                }
+            }
+            if(reachableForRemoving[index(ruleList[i].leftHand.lexeme)]) {
+                if (ruleList[i].rightHand.size() == 0){
+                    reachableForRemoving[index("#")] = true;
+                }
+                else{
+                    //for each rhs, make reachable
+                    for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
+                        reachableForRemoving[index(ruleList[i].rightHand[j].lexeme)] = true;
+                    }
                 }
             }
         }
@@ -427,45 +434,16 @@ void RemoveUselessSymbols()
     //go through the rule list and add any rules that are generating to the vector
     for(int i = 0; i < ruleList.size(); i++) {
         //if it is a generating rule's lhs, add it to the generatingRuleList
-        if(reachable[index(ruleList[i].leftHand.lexeme)]) {
+        if(reachableForRemoving[index(ruleList[i].leftHand.lexeme)]) {
             reachableList[i] = true;
         }
     }
-
-    cout << "indexList: ";
-    for (int i = 0; i < indexList.size(); i++){
-        cout << indexList[i] << " ";
-    }
-    cout << endl;
-    
-    cout << "generating: ";
-    for (int i = 0; i < indexList.size(); i++){
-        cout << generating[i] << " ";
-    }
-    cout << endl;
-    
-    cout << "reachable: ";
-    for (int i = 0; i < indexList.size(); i++){
-        cout << reachable[i] << " ";
-    }
-    cout << endl;
-    
-    cout << "generatableList: ";
-    for (int i = 0; i < generatableList.size(); i++){
-        cout << generatableList[i] << " ";
-    }
-    cout << endl;
-
-    cout << "reachableList: ";
-    for (int i = 0; i < reachableList.size(); i++){
-        cout << reachableList[i] << " ";
-    }
-    cout << endl;
 
     //  ----STEP 7: PRINT----
     for (int i = 0; i < ruleList.size(); i++) {
         //if usefule, print
         if (reachableList[i] && generatableList[i]) {
+
             Rule thisRule = ruleList[i];
             cout << thisRule.leftHand.lexeme << " -> ";
             if (thisRule.rightHand.size() == 0){
@@ -480,9 +458,6 @@ void RemoveUselessSymbols()
             cout << endl;
         }
     }
-
-
-
 }
 
 // Task 3
