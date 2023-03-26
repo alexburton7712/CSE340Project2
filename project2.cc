@@ -114,6 +114,18 @@ bool rhsTrue(bool generating[], vector<Token> rhs) {
     return true;
 }
 
+vector<string> removeRepeats(vector<string> list) {
+    vector<string> newList;
+    if(list.size() != 0) {
+        for(int i = 0; i < list.size(); i++) {
+            if(!isElement(list[i], newList)) {
+                newList.push_back(list[i]);
+            }
+        }
+    }
+    return newList;
+}
+
 //mainly for task 1
 void makeTerminals(){
     //iterate through full ruleList
@@ -603,34 +615,102 @@ void RemoveUselessSymbols()
 // Task 3
 void CalculateFirstSets()
 {
-    // string firstSet[indexList.size()];
-    // //S->ABC, FIRST(S) = FIRST(A)
-    // //if FIRST(A) contains epsilon, FIRST(S) = FIRST(A) - epislon U FIRST(B)
-
-    // //firstSets of all terminals should be the terminal
-    // for(int i = 0; i < indexList.size(); i++) {
-    //     if(isInTerminal(indexList[i])) {
-    //         firstSet[i] = indexList[i];
-    //     }
-    // }
-
-    // // //go through the full index list, in order to make sure there is full coverage, 
-    // // //you need to go through the indexList NonTerminalLsit.size() times
-    // // for(int j = 0; j < Nonterminals.size(); j++) {
-    // //     for(int i = 0; i < indexList.size(); i++) {
-    // //         FirstSet(indexList[i], firstSet);
-    // //     }
-    // // }
+    //empty string vector to push into each slot of firstSets
+    vector<string> set;
+    //initialize the firstSets
+    for(int i = 0; i < indexList.size(); i++) {
+        firstSets.push_back(set);
+    }
 
 
-    // //loop to run the recursive function, assuming firstSet is all null again
-    // for(int i = 0; i < indexList.size(); i++) {
-    //     fuckingBitch(indexList[i], firstSet[i]);
-    // }
+    //firstSets of all terminals should be the terminal
+    for(int i = 0; i < indexList.size(); i++) {
+        if(isInTerminal(indexList[i])) {
+            firstSets[i].push_back(indexList[i]);
+        }
+    }
 
-    // for (int i = 0; i < firstSet->size(); i++){
-    //     cout << firstSet[i] << endl;
-    // }
+    bool changed = true;
+    while(changed) {
+        for(int i = 0; i < ruleList.size(); i++) {
+            //rule III
+            if(ruleList[i].rightHand.size() != 0) {
+                for(int j = 0; j < firstSets[index(ruleList[i].rightHand[0].lexeme)].size(); j++) {
+                    firstSets[index(ruleList[i].leftHand.lexeme)].push_back(firstSets[index(ruleList[i].rightHand[0].lexeme)][j]);
+                    changed = true;
+                }
+            }
+            //rule IV
+
+            //rule V
+            bool allHaveEpsilon = true;
+            for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
+                if(!isElement("#", firstSets[index(ruleList[i].rightHand[j].lexeme)])) {
+                    allHaveEpsilon = false;
+                    break;
+                }
+            }
+            if(allHaveEpsilon) {
+                firstSets[index(ruleList[i].leftHand.lexeme)].push_back("#");
+                changed = true;
+            }
+        }
+    }
+
+    for(int l = 0; l < ruleList.size(); l++) {
+        for(int i = 2 ; i < indexList.size(); i++) {
+            for(int j = 0; j < ruleList.size(); j++) {
+                if(ruleList[j].leftHand.lexeme == indexList[i]) {
+                    if(ruleList[j].rightHand.size() == 0) { //epsilon where the RHS is empty
+                        firstSets[index(ruleList[j].leftHand.lexeme)].push_back("#");
+                    }
+                    else {// otherwise add the First Set of the RHS[0] to firstSet of LHS
+                        for(int k = 0; k < firstSets[index(ruleList[j].rightHand[0].lexeme)].size(); k++) {
+                            firstSets[index(ruleList[j].leftHand.lexeme)].push_back(firstSets[index(ruleList[j].rightHand[0].lexeme)][k]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //remove repeats
+    for(int i = 0; i < firstSets.size(); i++) {
+        for(int j = 0; j < firstSets[i].size(); j++) {
+            firstSets[i] = removeRepeats(firstSets[i]);
+        }
+    }
+
+    string str = "";
+
+    for(int j = 0; j < firstSets.size(); j++) {
+            for(int k = 0; k < firstSets[j].size() - 1; k++) {
+                cout << "HERE" << endl;
+                if(index(firstSets[j][k]) > index(firstSets[j][k + 1])) {
+                    str = firstSets[j][k];
+                    cout << str << endl;
+                    firstSets[j][k] = firstSets[j][k + 1];
+                    firstSets[j][k + 1] = str;
+                }
+            }
+        }
+
+    for(int i = 0; i < indexList.size(); i++) {
+        if(isInNonterminals(indexList[i])) {
+            cout << "FIRST(" << indexList[i] << ") = { ";
+            for(int j = 0; j < firstSets[i].size(); j++) {
+                if(j != firstSets[i].size() - 1) {
+                    cout << firstSets[i][j] << ", ";
+                }
+                else {
+                    cout << firstSets[i][j];
+                }
+            }
+            cout << " }" << endl;
+        }
+    }
+
+
 
 }
 
