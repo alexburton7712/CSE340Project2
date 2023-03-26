@@ -556,46 +556,40 @@ void RemoveUselessSymbols()
     vector<bool> reachableList(generatingRules.size(), false); //use this for cross reference
     //go through the rule list and add any rules that are generating to the vector
     for(int i = 0; i < generatingRules.size(); i++) {
-        //if it is a generating rule's lhs, add it to the generatingRuleList
+        //for each generating rule, if its a reachable symbol, make this rule reachable
         if(reachableIndex[index(generatingRules[i].leftHand.lexeme)]) {
             reachableList[i] = true;
         }
     }
 
-    cout << "index list: \t\t";
-    for (int i = 0; i < indexList.size(); i++){
-        cout << indexList[i] << " ";
-    }
-    cout << endl;
+    // cout << "index list: \t\t";
+    // for (int i = 0; i < indexList.size(); i++){
+    //     cout << indexList[i] << " ";
+    // }
+    // cout << endl;
 
-    cout << "generating index: \t";
-    for (int i = 0; i < indexList.size(); i++){
-        cout << generatingIndex[i] << " ";
-    }
-    cout << endl;
-    cout << "reachable index: \t";
-    for (int i = 0; i < indexList.size(); i++){
-        cout << reachableIndex[i] << " ";
-    }
-    cout << endl;
+    // cout << "generating index: \t";
+    // for (int i = 0; i < indexList.size(); i++){
+    //     cout << generatingIndex[i] << " ";
+    // }
+    // cout << endl;
+    // cout << "reachable index: \t";
+    // for (int i = 0; i < indexList.size(); i++){
+    //     cout << reachableIndex[i] << " ";
+    // }
+    // cout << endl;
 
-    cout << "generating rules: \t";
-    for (int i = 0; i < ruleList.size(); i++){
-        cout << generatableList[i] << " ";
-    }
-    cout << endl;
+    // cout << "generating rules: \t";
+    // for (int i = 0; i < ruleList.size(); i++){
+    //     cout << generatableList[i] << " ";
+    // }
+    // cout << endl;
 
-    cout << "reachable rules: \t";
-    for (int i = 0; i < generatingRules.size(); i++){
-        cout << reachableList[i] << " ";
-    }
-    cout << endl;
-
-    cout << "generating rules ----- " << endl;
-    printRules(generatingRules);
-    
-
-
+    // cout << "reachable rules: \t";
+    // for (int i = 0; i < generatingRules.size(); i++){
+    //     cout << reachableList[i] << " ";
+    // }
+    // cout << endl;
 
     //  ----STEP 7: PRINT----
     for (int i = 0; i < generatingRules.size(); i++) {
