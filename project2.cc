@@ -502,17 +502,17 @@ void RemoveUselessSymbols()
     //  ----REACHABLE RULES----
     //
 
-    //using generatble rules
+    //using generatble rules (filtered rule list)
 
     //  ---STEP 4: MAKE FIRST SYMBOL REACHABLE----
-    bool reachableForRemoving[indexList.size()];
+    bool reachableIndex[indexList.size()];
     //first make all false
     for (int i = 0; i < indexList.size(); i++) {
-        reachableForRemoving[i] = false;
+        reachableIndex[i] = false;
     }
     //save start symbol - if we have some generating rules, set the first one to reaching
     if (generatingRules.size() != 0){
-        reachableForRemoving[index(generatingRules[0].leftHand.lexeme)] = true;
+        reachableIndex[index(generatingRules[0].leftHand.lexeme)] = true;
     }
 
     //start symbol is first rule that is generating 
@@ -537,14 +537,14 @@ void RemoveUselessSymbols()
             //         reachableForRemoving[index(ruleList[i].rightHand[j].lexeme)] = false;
             //     }
             // }
-            if(reachableForRemoving[index(generatingRules[i].leftHand.lexeme)]) {
+            if(reachableIndex[index(generatingRules[i].leftHand.lexeme)]) {
                 if (generatingRules[i].rightHand.size() == 0){
-                    reachableForRemoving[index("#")] = true;
+                    reachableIndex[index("#")] = true;
                 }
                 else{
                     //for each rhs, make reachable
                     for(int j = 0; j < generatingRules[i].rightHand.size(); j++) {
-                        reachableForRemoving[index(generatingRules[i].rightHand[j].lexeme)] = true;
+                        reachableIndex[index(generatingRules[i].rightHand[j].lexeme)] = true;
                     }
                 }
             }
@@ -557,7 +557,7 @@ void RemoveUselessSymbols()
     //go through the rule list and add any rules that are generating to the vector
     for(int i = 0; i < generatingRules.size(); i++) {
         //if it is a generating rule's lhs, add it to the generatingRuleList
-        if(reachableForRemoving[index(generatingRules[i].leftHand.lexeme)]) {
+        if(reachableIndex[index(generatingRules[i].leftHand.lexeme)]) {
             reachableList[i] = true;
         }
     }
@@ -575,7 +575,7 @@ void RemoveUselessSymbols()
     cout << endl;
     cout << "reachable index: \t";
     for (int i = 0; i < indexList.size(); i++){
-        cout << reachableForRemoving[i] << " ";
+        cout << reachableIndex[i] << " ";
     }
     cout << endl;
 
