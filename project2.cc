@@ -842,7 +842,8 @@ void CalculateFollowSets(){
                     //after adding it for the first time, increment k, which tkaes us to next nonterminal that has hash, then add to there
                 }
                 //while in bounds, next is nonterminal, and has # in first set, add
-                while ((p-k) >= 0 && isInNonterminals(rule.rightHand[p-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[p-k-1].lexeme)]));
+                while ((p-k) >= 0 && isInNonterminals(rule.rightHand[p-k].lexeme) 
+                && isElement("#", firstSets[index(rule.rightHand[p-k-1].lexeme)]));
                 
                 
                 // //if in bounds and next one is a nonterminal, add this terminal to that next one's follow set
@@ -897,7 +898,8 @@ void CalculateFollowSets(){
                     
                 } //then check
                 //while in bounds, next is nonterminal, and has # in first set
-                while ((p-k) >= 0 && isInNonterminals(rule.rightHand[p-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[p-k-1].lexeme)]));
+                while ((p-k) >= 0 && isInNonterminals(rule.rightHand[p-k].lexeme) 
+                && isElement("#", firstSets[index(rule.rightHand[p-k-1].lexeme)]));
                 //}
             //}   
             }
