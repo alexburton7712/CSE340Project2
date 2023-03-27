@@ -136,6 +136,22 @@ void addToSet(vector<string> &existing, vector<string> toInput){
         }
     }
 }
+void addToSetFollow(vector<string> &existing, vector<string> toInput){
+    //add each string in toInput one by one into this existing 2d string vector
+    //insert at exising's given index, add all strings to that vector
+
+    //for example, add each string from toInput (rhs first set)
+    //into this lhs first set and check for repeats
+
+    //add rhs into lhs --> (lhs, rhs) - jsut without #
+    
+    for (int i = 0; i < toInput.size(); i++){
+        //if this string not already in this existing set, add
+        if (!isElement(toInput[i], existing) && toInput[i] != "#"){
+            existing.push_back(toInput[i]);
+        }
+    }
+}
 
 
 bool rhsTrue(bool generating[], vector<Token> rhs) {
@@ -734,233 +750,313 @@ void CalculateFirstSets()
 
 }
 
-// // Task 4
-// void CalculateFollowSets(){
+void CalculateFollowSets(){
 
-//     CalculatingFirst();
+    CalculatingFirst();
 
-//     // 1) FOLLOW(S) = { $ }   // where S is the starting Non-Terminal
+    // 1) FOLLOW(S) = { $ }   // where S is the starting Non-Terminal
 
-//     // 2) If A -> pBq is a production, where p, B and q are any grammar symbols,
-//     // then everything in FIRST(q)  except Є is in FOLLOW(B).
+    // 2) If A -> pBq is a production, where p, B and q are any grammar symbols,
+    // then everything in FIRST(q)  except Є is in FOLLOW(B).
 
-//     // 3) If A->pB is a production, then everything in FOLLOW(A) is in FOLLOW(B).
+    // 3) If A->pB is a production, then everything in FOLLOW(A) is in FOLLOW(B).
 
-//     // 4) If A->pBq is a production and FIRST(q) contains Є, 
-//     // then FOLLOW(B) contains { FIRST(q) – Є } U FOLLOW(A) 
-
-
-//     //empty string vector to push into each slot of followSets
-//     vector<string> set;
-//     //initialize the followSets, corresponds with indexList
-//     for(int i = 0; i < indexList.size(); i++) {
-//         followSets.push_back(set);
-//     }
-//     //now we have a vector of vectorofstrings for each nonterminal, how they appear in the grammar
+    // 4) If A->pBq is a production and FIRST(q) contains Є, 
+    // then FOLLOW(B) contains { FIRST(q) – Є } U FOLLOW(A) 
 
 
-//     //  ----Step 1: Initialize follow set of start symbol----
-//     //this is fine
-//     for(int i = 0; i < indexList.size(); i++) {
-//         if (isInNonterminals(indexList[i])){
-//             followSets[i].push_back("$"); //should be third symbol... after # and $
-//             break;
-//         }
-//     }
+    //empty string vector to push into each slot of followSets
+    vector<string> set;
+    //initialize the followSets, corresponds with indexList
+    for(int i = 0; i < indexList.size(); i++) {
+        followSets.push_back(set);
+    }
+    //now we have a vector of vectorofstrings for each nonterminal, how they appear in the grammar
 
 
-//     ///printing first sets jsut to reference 
-//     for (int i = 0; i < indexList.size(); i++){
-//         if (isInNonterminals(indexList[i])){
-//             cout << "FIRST(" << indexList[i] << ") = { ";
-//             for (int j = 0; j < firstSets[i].size(); j++){
-//                 cout << firstSets[i][j];
-//                 if (j != firstSets[i].size() - 1){
-//                     cout <<  ", ";
-//                 }
-//             }
-//             cout << " }";
-//             cout << endl;
-//         }
-//     }
+    //  ----Step 1: Initialize follow set of start symbol----
+    //this is fine
+    for(int i = 0; i < indexList.size(); i++) {
+        if (isInNonterminals(indexList[i])){
+            followSets[i].push_back("$"); //should be third symbol... after # and $
+            break;
+        }
+    }
 
-//     //  ----Step 2: if S-> A B, first of B into follow of A----
-//     //for each rule
-//     for (int i = 0; i < ruleList.size(); i++) {
-//         //iterator
-//         Rule rule = ruleList[i];
-//         //get the last rhs symbol
-//         string lastRHS = ruleList[i].rightHand[rule.rightHand.size() - 1].lexeme;
 
-//         //if this lastrhs is a terminal, loop through nonterminalrhs that have # in first sets
-//         //and add to their follows
-//         if (isInTerminal(lastRHS)){ //if this rhs is terminal - keep adding to nonterminals that have # in first set
-//             //the terminal for ease
-//             string thisTerminal = rule.rightHand[j].lexeme;
-//             //get rhs indexList index for ease
-//             int indexLastRHS = index(lastRHS);
+    //  ----Step 2: if S-> A B, first of B into follow of A----
+    //for each rule
+    for (int n = 0; n < ruleList.size(); n++) {
+    for (int i = 0; i < ruleList.size(); i++) {
+        //iterator
+        Rule rule = ruleList[i];
+        //get size of this rule's rhs
+        int thisRHSSize = rule.rightHand.size();
 
-//             int k = 1; //since terminal, start with second to last one
-//             //while in bounds, is a nonterminal, and has # in first set
-//             while((rule.rightHand.size()-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
-//                 //the previous nonterminal index
-//                 int indexPreviousRHS = index(rule.rightHand[rule.rightHand.size()-k].lexeme);
+        //if there is nothing in rhs, skip rule
+        if (thisRHSSize == 0){
+            continue;
+        }
 
-//                 //add this RHS terminal into previous RHS nonterminal if not already in there
-//                 if (!isElement(thisTerminal, followSets[indexPreviousRHS])){
-//                     followSets[indexPreviousRHS].push_back(thisTerminal);
-//                 }
-//                 k++;
-//             }
-//         }
-//         //else it is a nonterminal
-//         else if (isInNonterminals(lastRHS)){
+        //the last symbol in rhs
+        string lastRHS = ruleList[i].rightHand[thisRHSSize - 1].lexeme;
 
-//             //for each rhs starting from the back, 
-//             for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
+        //last index is size - 1
+        int rhsLastIndex = thisRHSSize - 1;
+        
+        //for each rhs, will iterate through - 4 cases
+        for (int p = rule.rightHand.size() - 1; p >= 0; p--) {
+
+            string thisRHS = rule.rightHand[p].lexeme;
+
+
+            //if this rhs is terminal and next is terminal - go to next rhs symbol
+            if ((p-1) >= 0 && isInTerminal(thisRHS) && isInTerminal(rule.rightHand[p-1].lexeme)){
+                continue;
+            }
+
+            //if this rhs is terminal and next is nonterminal - keep adding to nonterminals that have # in first set
+            else if ((p-1) >= 0 && isInTerminal(thisRHS) && isInNonterminals(rule.rightHand[p-1].lexeme)){
+
+                //this is terminal, next is nonterminal, put this terminal into next nonterminal (already checked)
+                //all following nonterminals that have # in first set
+                string thisTerminal = thisRHS;
+                int k = 1; //next symbol (since this one is terminal, check if next is nonterminal)
+                // //loop through until there is a nonterminal, make sure in bounds - check if terminal
+                // while ((p - k) >= 0 && isInTerminal(rule.rightHand[p - k].lexeme)){
+                //     //update terminal, since this is next terminal
+                //     thisTerminal = rule.rightHand[p - k].lexeme;
+                //     k++; //increment
+                // }
+                // //now it this k is a nonterminal - and in bounds vv check
                 
-//                 //going back counter
-//                 int k = 1;
-//                 //this rhs' first
-//                 int indexFirst = index(rule.rightHand[j].lexeme);
-//                 //while in bounds, and previous is nontemrminal, and this RHS's first set has #
-//                 while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+                //if k=1, then p-1 is the same as p-k, so for first iteration, add this terminal to the follow set of p-1 nonterminal
+                if ((p - k) >= 0 && isInNonterminals(rule.rightHand[p - k].lexeme)){
 
+                    //first add this terminal to index - k nonterminal
+                    do {
+                        //the index of the nonterminal
+                        int indexNextRHS = index(rule.rightHand[p-k].lexeme);
 
-//             }
-            
-//         }
+                        //add this RHS terminal into previous RHS nonterminal if not already in there
+                        if (!isElement(thisTerminal, followSets[indexNextRHS])){
+                            followSets[indexNextRHS].push_back(thisTerminal);
+                        }
+                        k++;
+                        //after adding it for the first time, increment k, which tkaes us to next nonterminal that has hash, then add to there
+                    }
+                    //while in bounds, next is nonterminal, and has # in first set, add
+                    while ((p-k) >= 0 && isInNonterminals(rule.rightHand[p-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[p-k].lexeme)]));
+                    p = -1;
+                    break; //added so done, no more this rule
+                }
+                //else if terminal or does not have next symbol, then skip
+                
+                // //if in bounds and next one is a nonterminal, add this terminal to that next one's follow set
+                // if ((lastIndex - 1) >= 0 && isInNonterminals(rule.rightHand[lastIndex - 1].lexeme)){   
+                //     if (!isElement(thisTerminal, followSets[index(rule.rightHand[lastIndex-1].lexeme)])){
+                //         followSets[index(rule.rightHand[lastIndex-1].lexeme)].push_back(thisTerminal);
+                //     }
+                //     //continue adding this terminal to nonterminal follows if it meets conditions
+                //     int k = 2; //since terminal, start with second to last one
+                //     //while in bounds, is a nonterminal, and has # in first set
+                //     while((lastIndex-k) >= 0 && isInNonterminals(rule.rightHand[lastIndex-k].lexeme) 
+                //     && isElement("#", firstSets[index(rule.rightHand[lastIndex-k].lexeme)])){
+                //         //the previous nonterminal index
+                //         int indexPreviousRHS = index(rule.rightHand[lastIndex-k].lexeme);
+                //         //add this RHS terminal into previous RHS nonterminal if not already in there
+                //         if (!isElement(thisTerminal, followSets[indexPreviousRHS])){
+                //             followSets[indexPreviousRHS].push_back(thisTerminal);
+                //         }
+                //         k++;
+                //     }
+                // }
+            }
+            else if ((p-1) >= 0 && isInNonterminals(thisRHS) && isInTerminal(rule.rightHand[p-1].lexeme)){
+                continue;
+            }
+            //else it is a nonterminal
+            else if ((p-1) >= 0 && isInNonterminals(thisRHS) && isInNonterminals(rule.rightHand[p-1].lexeme)){
 
-//         //for each rhs - starting from back
-//         for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
+                //starting from lastIndex
+                //for each rhs starting from the back, 
+                for (int j = p; j >= 0; j--) { //add this nonterminal to previous ones if a nonterminal with #
 
-//             //if this rhs is nonterminal, put this nonterminal into previous nonterminal
-//             if (isInNonterminals(rule.rightHand[j].lexeme)) {
-//                 //rightHand[j] is THIS rhs
-//                 //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a nonterminal
+                    //start from j
 
-//                 //going back counter
-//                 int k = 1;
-//                 //this rhs' first
-//                 int indexFirst = index(rule.rightHand[j].lexeme);
-//                 //while in bounds, and previous is nontemrminal, and this RHS's first set has #
-//                 while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
-//                     //the previous one's follow set index
-//                     int indexFollow = index(rule.rightHand[j-k].lexeme);
-//                     //put entire first of this nonterminal, into this follow of previous nonterminals(s)
-//                     addToSet(followSets[indexFollow], firstSets[indexFirst]);     //already checks for repeats            
-//                     k++;
-//                 }
-//                 // //thisRHS in LSH, and that rule's rhs == empty
-//                 // //while righthand[j-k] doesnt have epsilon and is a nonterminal
-//                 // while (isInNonterminals(rule.rightHand[j-k].lexeme) && 
-//                 //     ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme)].rightHand.size() == 0){ //the nonterminal(s) part
-//                 //     //the previous one's follow set index
-//                 //     int indexFollow = index(rule.rightHand[j-k].lexeme);
-//                 //     //put first of this nonterminal, into follow of previous nonterminals(s)
-//                 //     followSets[indexFollow].push_back(firstSets[indexFirst]);                    
-//                 //     k++;
-//                 // }
-//                 // while (isInNonterminals(rule.rightHand[j-k].lexeme)){
-//                 //     int p = 1;
-//                 //     while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
-//                 //     && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
-//                 //         //the previous one's follow set index
-//                 //         int indexFollow = index(rule.rightHand[j-k].lexeme);
-//                 //         //finding rule that has epsilon (make sure stay in bounds)
-//                 //         p++;
-//                 //     }
-//                 //     if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
-//                 //         //if it rhs empty = epsilon, then add this first set into A
-//                 //         //followSets[i].push_back() <-first set of rule.rightHand[j]
-//                 //         k++;
-//                 //     }
-//                 // }
-//             }
+                    //if next one is a terminal or out of bounds, stop
+                    if (!((j-1) >= 0) || !isInNonterminals(rule.rightHand[j - 1].lexeme)){
+                        continue;
+                        //if next is a terminal
+                    }
+                    //else if in bounds and a nonterminal - hash or not, will add (just no hash will be the last add - bc of while loop)
+                    else if ((j-1) >= 0 && isInNonterminals(rule.rightHand[j - 1].lexeme)){
+                        //going back counter
+                        int k = 1;
+                        //this rhs' first set index
+                        int indexFirst = index(rule.rightHand[j].lexeme);
 
-//             //if this rhs is terminal - keep adding to nonterminals that have # in first set
-//             // else if (isInTerminal(rule.rightHand[j].lexeme)) {
-//             //     string thisTerminal = rule.rightHand[j].lexeme;
-//             //     //rightHand[j] is THIS rhs
-//             //     //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a terminal
+                        do { //add first
+                            
+                            //if terminal, do not add. stop
+                            if (!isInNonterminals(rule.rightHand[j-k].lexeme)){
+                                break; //exit while loop, and end this rhs iteration
+                            }
 
-//             //     //going back counter
-//             //     int k = 1;
-//             //     //while in bounds, PREVIOUS rhs is a nonterminal, and this RHS's first set has #
+                            //the previous one's follow set index
+                            int indexFollow = index(rule.rightHand[j-k].lexeme);
+                            //put entire first of this nonterminal, into this follow of previous nonterminals(s)
+                            addToSetFollow(followSets[indexFollow], firstSets[indexFirst]);     //already checks for repeats            
+                            k++;
+                            
+                        } //then check
+                        //while in bounds, next is nonterminal, and has # in first set
+                        while ((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)]));
+                        j = -1;
+                        p = -1;
+                        break; //added, so no more this rule
+                    }
+                }   
+            }
+        }
 
-//             //     //put B into A (B is terminal and A is nonterminal)
-//             //     while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
-//             //         //the previous one's follow set index
-//             //         int indexPreviousRHS = index(rule.rightHand[j-k].lexeme);
-//             //         //add this RHS terminal into previous RHS nonterminal if not already in there
-//             //         if (!isElement(thisTerminal, followSets[indexPreviousRHS])){
-//             //             followSets[indexPreviousRHS].push_back(thisTerminal);
-//             //         }
-//             //         k++;
-//             //     }
-//             //     // while (isInNonterminals(rule.rightHand[j-k].lexeme)){
-//             //     //     int p = 1;
-//             //     //     while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
-//             //     //     && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
-//             //     //         //finding rule that has epsilon (make sure stay in bounds)
-//             //     //         p++;
-//             //     //     }
-//             //     //     if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
-//             //     //         //if it rhs empty = epsilon, then add this terminal into A
-//             //     //         followSets[i].push_back(rule.rightHand[j-k].lexeme);
-//             //     //         k++;
-//             //     //     }
-//             //     // }
-//             // }
-//         }
-//     }
+        //for each rhs - starting from back
+        //for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
+            // //if this rhs is nonterminal, put this nonterminal into previous nonterminal
+            // if (isInNonterminals(rule.rightHand[j].lexeme)) {
+            //     //rightHand[j] is THIS rhs
+            //     //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a nonterminal
+            //     //going back counter
+            //     int k = 1;
+            //     //this rhs' first
+            //     int indexFirst = index(rule.rightHand[j].lexeme);
+            //     //while in bounds, and previous is nontemrminal, and this RHS's first set has #
+            //     while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+            //         //the previous one's follow set index
+            //         int indexFollow = index(rule.rightHand[j-k].lexeme);
+            //         //put entire first of this nonterminal, into this follow of previous nonterminals(s)
+            //         addToSet(followSets[indexFollow], firstSets[indexFirst]);     //already checks for repeats            
+            //         k++;
+            //     }
+            //     // //thisRHS in LSH, and that rule's rhs == empty
+            //     // //while righthand[j-k] doesnt have epsilon and is a nonterminal
+            //     // while (isInNonterminals(rule.rightHand[j-k].lexeme) && 
+            //     //     ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme)].rightHand.size() == 0){ //the nonterminal(s) part
+            //     //     //the previous one's follow set index
+            //     //     int indexFollow = index(rule.rightHand[j-k].lexeme);
+            //     //     //put first of this nonterminal, into follow of previous nonterminals(s)
+            //     //     followSets[indexFollow].push_back(firstSets[indexFirst]);                    
+            //     //     k++;
+            //     // }
+            //     // while (isInNonterminals(rule.rightHand[j-k].lexeme)){
+            //     //     int p = 1;
+            //     //     while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
+            //     //     && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
+            //     //         //the previous one's follow set index
+            //     //         int indexFollow = index(rule.rightHand[j-k].lexeme);
+            //     //         //finding rule that has epsilon (make sure stay in bounds)
+            //     //         p++;
+            //     //     }
+            //     //     if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
+            //     //         //if it rhs empty = epsilon, then add this first set into A
+            //     //         //followSets[i].push_back() <-first set of rule.rightHand[j]
+            //     //         k++;
+            //     //     }
+            //     // }
+            // }
+            //if this rhs is terminal - keep adding to nonterminals that have # in first set
+            // else if (isInTerminal(rule.rightHand[j].lexeme)) {
+            //     string thisTerminal = rule.rightHand[j].lexeme;
+            //     //rightHand[j] is THIS rhs
+            //     //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a terminal
+            //     //going back counter
+            //     int k = 1;
+            //     //while in bounds, PREVIOUS rhs is a nonterminal, and this RHS's first set has #
+            //     //put B into A (B is terminal and A is nonterminal)
+            //     while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+            //         //the previous one's follow set index
+            //         int indexPreviousRHS = index(rule.rightHand[j-k].lexeme);
+            //         //add this RHS terminal into previous RHS nonterminal if not already in there
+            //         if (!isElement(thisTerminal, followSets[indexPreviousRHS])){
+            //             followSets[indexPreviousRHS].push_back(thisTerminal);
+            //         }
+            //         k++;
+            //     }
+            //     // while (isInNonterminals(rule.rightHand[j-k].lexeme)){
+            //     //     int p = 1;
+            //     //     while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
+            //     //     && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
+            //     //         //finding rule that has epsilon (make sure stay in bounds)
+            //     //         p++;
+            //     //     }
+            //     //     if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
+            //     //         //if it rhs empty = epsilon, then add this terminal into A
+            //     //         followSets[i].push_back(rule.rightHand[j-k].lexeme);
+            //     //         k++;
+            //     //     }
+            //     // }
+            // }
+       // }
+    }
+    }
 
-//     //  ----Step 3: if S-> A B, follow of S into follow of B----
-//     //for each rule
-//     for (int i = 0; i < ruleList.size(); i++) {
-//         //iterator
-//         Rule rule = ruleList[i];
-//         //for each rhs - reverse
-//         for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
-//             //if this rhs is nonterminal
-//             if (isInNonterminals(rule.rightHand[j].lexeme)) {
-//                 //rightHand[j] is THIS rhs
-//                 //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a nonterminal
-//                 //going back counter
-//                 int k = 0; //start from very last rhs first
-//                 //thisRHS in LSH, and that rule's rhs != empty
-//                 //while righthand[j-k] doesnt have epsilon and is a nonterminal
-//                 while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme)].rightHand.size() == 0){
-//                     //index for this lhs
-//                     int indexFollowLHS = index(rule.leftHand.lexeme);
-//                     //index for this iterating rhs
-//                     int indexFollowRHS = index(rule.rightHand[j-k].lexeme);
-//                     //add follow of LHS into follow of RHS
-//                     addToSet(followSets[indexFollowRHS], followSets[indexFollowLHS]);
-//                     k++;
-//                 }
-//             }
-//             if (isInTerminal(rule.rightHand[j].lexeme)) {
-//                 break;
-//             }
-//         }
-//     }
+    //  ----Step 3: if S-> A B, follow of S into follow of B----
+    //for each rule
+    for (int n = 0; n < ruleList.size(); n++) {
+    for (int i = 0; i < ruleList.size(); i++) {
+        //iterator
+        Rule rule2 = ruleList[i];
+        //for each rhs - reverse
+        for (int j = rule2.rightHand.size() - 1; j >= 0; j--) {
+            //if this rhs is nonterminal
+            if ((j) >= 0 && isInNonterminals(rule2.rightHand[j].lexeme)) {
+                //rightHand[j] is THIS rhs
+                //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a nonterminal
+                //going back counter
+                int k = 0; //start from very last rhs first
+                //thisRHS in LSH, and that rule's rhs != empty
+                //while righthand[j-k] doesnt have epsilon and is a nonterminal
 
-//     cout << "   ----END FOLLOW SETS----" << endl;
-//     for (int i = 0; i < indexList.size(); i++){
-//         if (isInNonterminals(indexList[i])){
-//             cout << "FOLLOW(" << indexList[i] << ") = "; // = { 
-//             for (int j = 0; j < followSets[i].size(); j++){
-//                 cout << followSets[i][j];
-//                 if (j != followSets[i].size() - 1){
-//                     cout <<  ", ";
-//                 }
-//             }
-//             //cout << " }";
-//             cout << endl;
-//         }
-//     }
-// }
+                do { //add first
+                    //index for this lhs
+                    int indexFollowLHS = index(rule2.leftHand.lexeme);
+                    //index for this iterating rhs
+                    int indexFollowRHS = index(rule2.rightHand[j-k].lexeme);
+                    //add follow of LHS into follow of RHS
+                    addToSetFollow(followSets[indexFollowRHS], followSets[indexFollowLHS]);
+                    k++;  
+                } //then check
+                //while in bounds, next is nonterminal, and has # in first set
+                while ((j-k) >= 0 && isInNonterminals(rule2.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule2.rightHand[j-k].lexeme)]));
+
+            }
+            if (isInTerminal(rule2.rightHand[j].lexeme)) {
+                break;
+            }
+        }
+    }
+    }
+
+    //make sure the firstSets are in order as they appear in the grammar
+    for(int i = 0; i < followSets.size(); i++) {
+        reOrder(followSets[i]);
+    }
+
+    for (int i = 0; i < indexList.size(); i++){
+        if (isInNonterminals(indexList[i])){
+            cout << "FOLLOW(" << indexList[i] << ") = { "; // = { 
+            for (int j = 0; j < followSets[i].size(); j++){
+                cout << followSets[i][j];
+                if (j != followSets[i].size() - 1){
+                    cout <<  ", ";
+                }
+            }
+            //cout << " }";
+            cout << endl;
+        }
+    }
+}
+
 
 // Task 5
 void CheckIfGrammarHasPredictiveParser()
