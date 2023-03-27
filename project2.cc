@@ -128,6 +128,9 @@ void addToSet(vector<string> &existing, vector<string> toInput){
     
     for (int i = 0; i < toInput.size(); i++){
         //if this string not already in this existing set, add
+        // if(allEpsilon && !isElement("#", existing)) {
+        //     existing.push_back("#");
+        // }
         if (!isElement(toInput[i], existing)){
             existing.push_back(toInput[i]);
         }
@@ -193,37 +196,14 @@ void makeNonterminals(){
       
 }
 
-
-//mainly for task 3
-string fuckingBitch(string variable, string set) {
-    //one last attempt at a recursive function
-    //I believe this is my best attempt yet
-    cout << "Set = " << set << endl;
-    if(isInTerminal(variable)) {
-        set += variable;
-    }
-    else {
-        for(int i = 0; i < ruleList.size(); i++) {
-            if(ruleList[i].leftHand.lexeme == variable) {
-                set += fuckingBitch(ruleList[i].rightHand[0].lexeme, set);
-
-            }
+bool hasEpsilon(Rule rule) {
+    for(int i = 0; i < rule.rightHand.size(); i++) { 
+        if(!isElement("#", firstSets[index(rule.rightHand[i].lexeme)])) {
+            return false;
         }
     }
-    return set;
+    return true;
 }
-// void FirstSet(string variable, string firstSetList[]) {
-//     for(int i = 0; i < ruleList.size(); i++) {
-//         if(ruleList[i].leftHand.lexeme == variable) {
-//             if(isInTerminal(ruleList[i].rightHand[0].lexeme)) {
-//                 firstSetList[index(variable)] += ruleList[i].rightHand[0].lexeme + " ";
-//             }
-//             else {
-//                 firstSetList[index(variable)] += firstSetList[index(ruleList[i].rightHand[0].lexeme)];
-//             }
-//         }
-//     }
-// }
 
 void CalculatingFirst(){
 
@@ -234,80 +214,8 @@ void CalculatingFirst(){
         firstSets.push_back(set);
     }
 
-    /*
-
-    //firstSets of all terminals should be the terminal
-    for(int i = 0; i < indexList.size(); i++) {
-        if(isInTerminal(indexList[i])) {
-            firstSets[i].push_back(indexList[i]);
-        }
-    }
-
-    bool changed = true;
-    while(changed) {
-        for(int i = 0; i < ruleList.size(); i++) {
-            //rule III
-            if(ruleList[i].rightHand.size() != 0) {
-                for(int j = 0; j < firstSets[index(ruleList[i].rightHand[0].lexeme)].size(); j++) {
-                    int indexThisLHS = index(ruleList[i].leftHand.lexeme);
-                    int indexThisRHS = index(ruleList[i].rightHand[0].lexeme);
-                    addToSet(firstSets[indexThisLHS], firstSets[indexThisRHS]);
-                    changed = true;
-                }
-            }
-            //rule IV
-
-            //rule V
-            bool allHaveEpsilon = true;
-            for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
-                if(!isElement("#", firstSets[index(ruleList[i].rightHand[j].lexeme)])) {
-                    allHaveEpsilon = false;
-                    break;
-                }
-            }
-            if(allHaveEpsilon) {
-                firstSets[index(ruleList[i].leftHand.lexeme)].push_back("#");
-                changed = true;
-            }
-        }
-    }
-
-    for(int l = 0; l < ruleList.size(); l++) {
-        //for each symbol
-        for(int i = 2 ; i < indexList.size(); i++) {
-
-            //for each rule
-            for(int j = 0; j < ruleList.size(); j++) {
-                
-                //if this LHS is this index
-                if(ruleList[j].leftHand.lexeme == indexList[i]) {
-                    int indexThisLHS = index(ruleList[j].leftHand.lexeme);
-
-                    if(ruleList[j].rightHand.size() == 0) { //epsilon where the RHS is empty
-                        int indexThisLHS = index(ruleList[j].leftHand.lexeme);
-                        if (!isElement("#", firstSets[indexFollow])){
-                            firstSets[indexFollow].push_back("#");
-                        } 
-                    }
-                    else {// otherwise add the First Set of the RHS[0] to firstSet of LHS
-                        for(int k = 0; k < firstSets[index(ruleList[j].rightHand[0].lexeme)].size(); k++) {
-                            int indexThisRHS = index(ruleList[j].rightHand[0].lexeme);
-                            addToSet(firstSets[indexThisLHS], firstSets[indexThisRHS]);
-                            //firstSets[index(ruleList[j].leftHand.lexeme)].push_back(firstSets[indexThisRHS][k]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    */
-
-   int counter = 0; 
-
     for (int n = 0; n < ruleList.size(); n++){
     for (int i = 0; i < ruleList.size(); i++){
-        counter = i;
         //for ease
         Rule thisRule = ruleList[i];
         //to help find firstSet of this LHS (firstSet is corresponding with indexList)
@@ -338,6 +246,7 @@ void CalculatingFirst(){
                 // //first add this nonterminal's first set into this rule's (lhs) first set
                 // addToSet(firstSets[indexThisLHS], firstSets[indexStartRHS]);
                 int k = 0; 
+
                 //then we loop through rhs
                 //while in bounds, starting from first one
                 while (k < thisRule.rightHand.size()){ //for the rest of rsh
@@ -382,16 +291,24 @@ void CalculatingFirst(){
         }
 
     }
+
+        // for (int i = 0; i < indexList.size(); i++){
+        //     if (isInNonterminals(indexList[i])){
+        //         cout << "FIRST(" << indexList[i] << ") = { ";
+        //         for (int j = 0; j < firstSets[i].size(); j++){
+        //             cout << firstSets[i][j];
+        //             if (j != firstSets[i].size() - 1){
+        //                 cout <<  ", ";
+        //             }
+        //         }
+        //         cout << " }";
+        //         cout << endl;
+        //     }
+        // }
+
+        // cout << endl;
+
     }
-
-
-
-    // //remove repeats
-    // for(int i = 0; i < firstSets.size(); i++) {
-    //     for(int j = 0; j < firstSets[i].size(); j++) {
-    //         firstSets[i] = removeRepeats(firstSets[i]);
-    //     }
-    // }
 
 }
 
@@ -799,6 +716,7 @@ void CalculateFirstSets()
 {
     CalculatingFirst();
 
+    //make sure the firstSets are in order as they appear in the grammar
     for(int i = 0; i < firstSets.size(); i++) {
         reOrder(firstSets[i]);
     }
@@ -817,43 +735,7 @@ void CalculateFirstSets()
         }
     }
 
-    // for(int j = 0; j < firstSets.size(); j++) {
-    //     for(int k = 0; k < firstSets[j].size() - 1; k++) {
-    //         cout << "HERE" << endl;
-    //         if(index(firstSets[j][k]) > index(firstSets[j][k + 1])) {
-    //             str = firstSets[j][k];
-    //             cout << str << endl;
-    //             firstSets[j][k] = firstSets[j][k + 1];
-    //             firstSets[j][k + 1] = str;
-    //         }
-    //     }
-    // }
-
-    // for(int i = 0; i < indexList.size(); i++) {
-    //     if(isInNonterminals(indexList[i])) {
-    //         cout << "FIRST(" << indexList[i] << ") = { ";
-    //         for(int j = 0; j < firstSets[i].size(); j++) {
-    //             if(j != firstSets[i].size() - 1) {
-    //                 cout << firstSets[i][j] << ", ";
-    //             }
-    //             else {
-    //                 cout << firstSets[i][j];
-    //             }
-    //         }
-    //         cout << " }" << endl;
-    //     }
-    // }
-
 }
-// void FollowSet(string variable, string set) {
-//     for(int i = 0; i < ruleList.size(); i++) {
-//         for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
-//             if(ruleList[i].rightHand[j].lexeme == variable && (j + 1) = ruleList[i].rightHand.size()) {
-//                  set += firstSet(ruleList[i].rightHand[j])     
-//             }           
-//         }
-//     }
-// }
 
 // // Task 4
 // void CalculateFollowSets(){
