@@ -28,6 +28,8 @@ vector<string> indexList;
 vector<string> Terminals;
 vector<string> Nonterminals;
 vector<string> sortedNonterminals;
+vector<vector<string> > firstSets;
+vector<vector<string> > followSets;
 
 
 
@@ -52,6 +54,15 @@ int goToRuleLeft(string lhs){
     }
     return -1;
 }
+int findSortedNonterminalIndex(vector<string> sorted, string target){
+    for(int i = 0; i < sorted.size(); i++) {
+        if(sorted[i] == target) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void printRule(Rule thisRule) {
     cout << thisRule.leftHand.lexeme  << " -> ";
 
@@ -104,6 +115,25 @@ bool isInTerminal(string target) {
     }
     return false;
 }
+
+
+void addToSet(vector<string> &existing, vector<string> toInput){
+    //add each string in toInput one by one into this existing 2d string vector
+    //insert at exising's given index, add all strings to that vector
+
+    //for example, add each string from toInput (rhs first set)
+    //into this lhs first set and check for repeats
+
+    //add rhs into lhs --> (lhs, rhs)
+    
+    for (int i = 0; i < toInput.size(); i++){
+        //if this string not already in this existing set, add
+        if (!isElement(toInput[i], existing)){
+            existing.push_back(toInput[i]);
+        }
+    }
+}
+
 
 bool rhsTrue(bool generating[], vector<Token> rhs) {
     for(int i = 0; i < rhs.size(); i++) {
@@ -194,6 +224,177 @@ string fuckingBitch(string variable, string set) {
 //         }
 //     }
 // }
+
+void CalculatingFirst(){
+
+    //empty string vector to push into each slot of firstSets
+    vector<string> set;
+    //initialize the firstSets
+    for(int i = 0; i < indexList.size(); i++) {
+        firstSets.push_back(set);
+    }
+
+    /*
+
+    //firstSets of all terminals should be the terminal
+    for(int i = 0; i < indexList.size(); i++) {
+        if(isInTerminal(indexList[i])) {
+            firstSets[i].push_back(indexList[i]);
+        }
+    }
+
+    bool changed = true;
+    while(changed) {
+        for(int i = 0; i < ruleList.size(); i++) {
+            //rule III
+            if(ruleList[i].rightHand.size() != 0) {
+                for(int j = 0; j < firstSets[index(ruleList[i].rightHand[0].lexeme)].size(); j++) {
+                    int indexThisLHS = index(ruleList[i].leftHand.lexeme);
+                    int indexThisRHS = index(ruleList[i].rightHand[0].lexeme);
+                    addToSet(firstSets[indexThisLHS], firstSets[indexThisRHS]);
+                    changed = true;
+                }
+            }
+            //rule IV
+
+            //rule V
+            bool allHaveEpsilon = true;
+            for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
+                if(!isElement("#", firstSets[index(ruleList[i].rightHand[j].lexeme)])) {
+                    allHaveEpsilon = false;
+                    break;
+                }
+            }
+            if(allHaveEpsilon) {
+                firstSets[index(ruleList[i].leftHand.lexeme)].push_back("#");
+                changed = true;
+            }
+        }
+    }
+
+    for(int l = 0; l < ruleList.size(); l++) {
+        //for each symbol
+        for(int i = 2 ; i < indexList.size(); i++) {
+
+            //for each rule
+            for(int j = 0; j < ruleList.size(); j++) {
+                
+                //if this LHS is this index
+                if(ruleList[j].leftHand.lexeme == indexList[i]) {
+                    int indexThisLHS = index(ruleList[j].leftHand.lexeme);
+
+                    if(ruleList[j].rightHand.size() == 0) { //epsilon where the RHS is empty
+                        int indexThisLHS = index(ruleList[j].leftHand.lexeme);
+                        if (!isElement("#", firstSets[indexFollow])){
+                            firstSets[indexFollow].push_back("#");
+                        } 
+                    }
+                    else {// otherwise add the First Set of the RHS[0] to firstSet of LHS
+                        for(int k = 0; k < firstSets[index(ruleList[j].rightHand[0].lexeme)].size(); k++) {
+                            int indexThisRHS = index(ruleList[j].rightHand[0].lexeme);
+                            addToSet(firstSets[indexThisLHS], firstSets[indexThisRHS]);
+                            //firstSets[index(ruleList[j].leftHand.lexeme)].push_back(firstSets[indexThisRHS][k]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    */
+
+   int counter = 0; 
+
+    for (int n = 0; n < ruleList.size(); n++){
+    for (int i = 0; i < ruleList.size(); i++){
+        counter = i;
+        //for ease
+        Rule thisRule = ruleList[i];
+        //to help find firstSet of this LHS (firstSet is corresponding with indexList)
+        int indexThisLHS = index(thisRule.leftHand.lexeme);
+
+        //if empty, add # if not already there
+        if (thisRule.rightHand.size() == 0){
+            if (!isElement("#", firstSets[indexThisLHS])){
+                firstSets[indexThisLHS].push_back("#");
+            } 
+        }
+        //else not empty, go through rhs
+        else { 
+            //get first rhs and determine
+            Token thisRight = thisRule.rightHand[0];
+            int indexStartRHS = index(thisRight.lexeme);
+
+            //if a terminal, just add and stop
+            if (isInTerminal(thisRight.lexeme)){
+                //if not already in this rule's (lhs) firstset, add this terminal to it
+                if (!isElement(thisRight.lexeme, firstSets[indexThisLHS])){
+                    firstSets[indexThisLHS].push_back(thisRight.lexeme);
+                    //add then stop
+                } 
+            }
+            //else is nonterminal, will have a first set and has #, add and loop
+            else if(isInNonterminals(thisRight.lexeme) && isElement("#", firstSets[indexStartRHS])){
+                // //first add this nonterminal's first set into this rule's (lhs) first set
+                // addToSet(firstSets[indexThisLHS], firstSets[indexStartRHS]);
+                int k = 0; 
+                //then we loop through rhs
+                //while in bounds, starting from first one
+                while (k < thisRule.rightHand.size()){ //for the rest of rsh
+                    
+                    //get index of this RHS in indexList - for ease
+                    int indexThisRHS = index(thisRule.rightHand[k].lexeme);
+
+                    //if non terminal first set has #, add nonterminal first set to this rule(lhs)'s first set
+                    if (isInNonterminals(thisRule.rightHand[k].lexeme) && isElement("#", firstSets[indexThisRHS])){
+                        //add thisRHSNonTerminal first set to thisRule'sLHS first set
+                        addToSet(firstSets[indexThisLHS], firstSets[indexThisRHS]);
+                    }
+                    else if (isInTerminal(thisRule.rightHand[k].lexeme)){
+                        //if not already, add
+                        if (!isElement(thisRule.rightHand[k].lexeme, firstSets[indexThisLHS])){
+                            firstSets[indexThisLHS].push_back(thisRule.rightHand[k].lexeme);
+                            break;
+                            //add then stop
+                        } 
+                    }
+                    else if (isInNonterminals(thisRule.rightHand[k].lexeme) && !isElement("#", firstSets[indexThisRHS])){
+                        //add thisRHSNonTerminal first set to thisRule'sLHS first set
+                        addToSet(firstSets[indexThisLHS], firstSets[indexThisRHS]);
+                        break;
+                    }
+                    k++;
+                }
+            }
+            //else nonterminal with no empty, just add and end
+            else if (isInNonterminals(thisRight.lexeme) && !isElement("#", firstSets[indexStartRHS])){
+                //if this rhs's first set not empty, continue
+                if (firstSets[indexStartRHS].size() != 0){
+                    //first add this nonterminal's first set into this rule's (lhs) first set
+
+                    //add first set of this rhs into lhs
+                    addToSet(firstSets[indexThisLHS], firstSets[indexStartRHS]);
+                    //not adding here
+
+                }   
+                //if empty, just skip
+            }
+        }
+
+    }
+    }
+
+
+
+    // //remove repeats
+    // for(int i = 0; i < firstSets.size(); i++) {
+    //     for(int j = 0; j < firstSets[i].size(); j++) {
+    //         firstSets[i] = removeRepeats(firstSets[i]);
+    //     }
+    // }
+
+}
+
 
 //mainly for task 5
 bool HasUselessRules() {
@@ -502,21 +703,16 @@ void RemoveUselessSymbols()
     //
     //  ----REACHABLE RULES----
     //
-
     //using generatble rules (filtered rule list)
 
     //  ---STEP 4: MAKE FIRST SYMBOL REACHABLE----
-
     //if starting symbol is not generating, then cannot generate anything
     //if !generating(index[ruleList[0].leftHand.lexeme])
-
     bool reachableIndex[indexList.size()];
     //first make all false
     for (int i = 0; i < indexList.size(); i++) {
         reachableIndex[i] = false;
     }
-
-
     //if the starting symbol is generating, continue to make reachable list
     if (generatingIndex[index(ruleList[0].leftHand.lexeme)]){
 
@@ -548,8 +744,6 @@ void RemoveUselessSymbols()
         }
     }
 
-    
-
     //  ---STEP 6: ADD REACHABLE LHS TO REACHABLE RULES----
     vector<bool> reachableList(generatingRules.size(), false); //use this for cross reference
     //go through the rule list and add any rules that are generating to the vector
@@ -559,37 +753,6 @@ void RemoveUselessSymbols()
             reachableList[i] = true;
         }
     }
-
-    // cout << "index list: \t\t";
-    // for (int i = 0; i < indexList.size(); i++){
-    //     cout << indexList[i] << " ";
-    // }
-    // cout << endl;
-
-    // cout << "generating index: \t";
-    // for (int i = 0; i < indexList.size(); i++){
-    //     cout << generatingIndex[i] << " ";
-    // }
-    // cout << endl;
-    // cout << "reachable index: \t";
-    // for (int i = 0; i < indexList.size(); i++){
-    //     cout << reachableIndex[i] << " ";
-    // }
-    // cout << endl;
-
-    // cout << "generating rules: \t";
-    // for (int i = 0; i < generatableList.size(); i++){
-    //     cout << generatableList[i] << " ";
-    // }
-    // cout << endl;
-
-    // cout << "reachable rules: \t";
-    // for (int i = 0; i < reachableList.size(); i++){
-    //     cout << reachableList[i] << " ";
-    // }
-    // cout << endl;
-
-    
 
     //  ----STEP 7: PRINT----
     for (int i = 0; i < generatingRules.size(); i++) {
@@ -615,108 +778,52 @@ void RemoveUselessSymbols()
 // Task 3
 void CalculateFirstSets()
 {
-    //empty string vector to push into each slot of firstSets
-    vector<string> set;
-    //initialize the firstSets
-    for(int i = 0; i < indexList.size(); i++) {
-        firstSets.push_back(set);
-    }
-
-
-    //firstSets of all terminals should be the terminal
-    for(int i = 0; i < indexList.size(); i++) {
-        if(isInTerminal(indexList[i])) {
-            firstSets[i].push_back(indexList[i]);
-        }
-    }
-
-    bool changed = true;
-    while(changed) {
-        for(int i = 0; i < ruleList.size(); i++) {
-            //rule III
-            if(ruleList[i].rightHand.size() != 0) {
-                for(int j = 0; j < firstSets[index(ruleList[i].rightHand[0].lexeme)].size(); j++) {
-                    firstSets[index(ruleList[i].leftHand.lexeme)].push_back(firstSets[index(ruleList[i].rightHand[0].lexeme)][j]);
-                    changed = true;
-                }
-            }
-            //rule IV
-
-            //rule V
-            bool allHaveEpsilon = true;
-            for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
-                if(!isElement("#", firstSets[index(ruleList[i].rightHand[j].lexeme)])) {
-                    allHaveEpsilon = false;
-                    break;
-                }
-            }
-            if(allHaveEpsilon) {
-                firstSets[index(ruleList[i].leftHand.lexeme)].push_back("#");
-                changed = true;
-            }
-        }
-    }
-
-    for(int l = 0; l < ruleList.size(); l++) {
-        for(int i = 2 ; i < indexList.size(); i++) {
-            for(int j = 0; j < ruleList.size(); j++) {
-                if(ruleList[j].leftHand.lexeme == indexList[i]) {
-                    if(ruleList[j].rightHand.size() == 0) { //epsilon where the RHS is empty
-                        firstSets[index(ruleList[j].leftHand.lexeme)].push_back("#");
-                    }
-                    else {// otherwise add the First Set of the RHS[0] to firstSet of LHS
-                        for(int k = 0; k < firstSets[index(ruleList[j].rightHand[0].lexeme)].size(); k++) {
-                            firstSets[index(ruleList[j].leftHand.lexeme)].push_back(firstSets[index(ruleList[j].rightHand[0].lexeme)][k]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    //remove repeats
-    for(int i = 0; i < firstSets.size(); i++) {
-        for(int j = 0; j < firstSets[i].size(); j++) {
-            firstSets[i] = removeRepeats(firstSets[i]);
-        }
-    }
+    CalculatingFirst();
 
     string str = "";
 
-    for(int j = 0; j < firstSets.size(); j++) {
-            for(int k = 0; k < firstSets[j].size() - 1; k++) {
-                cout << "HERE" << endl;
-                if(index(firstSets[j][k]) > index(firstSets[j][k + 1])) {
-                    str = firstSets[j][k];
-                    cout << str << endl;
-                    firstSets[j][k] = firstSets[j][k + 1];
-                    firstSets[j][k + 1] = str;
-                }
-            }
-        }
-
-    for(int i = 0; i < indexList.size(); i++) {
-        if(isInNonterminals(indexList[i])) {
+    for (int i = 0; i < indexList.size(); i++){
+        if (isInNonterminals(indexList[i])){
             cout << "FIRST(" << indexList[i] << ") = { ";
-            for(int j = 0; j < firstSets[i].size(); j++) {
-                if(j != firstSets[i].size() - 1) {
-                    cout << firstSets[i][j] << ", ";
-                }
-                else {
-                    cout << firstSets[i][j];
+            for (int j = 0; j < firstSets[i].size(); j++){
+                cout << firstSets[i][j];
+                if (j != firstSets[i].size() - 1){
+                    cout <<  ", ";
                 }
             }
-            cout << " }" << endl;
+            cout << " }";
+            cout << endl;
         }
     }
 
+    // for(int j = 0; j < firstSets.size(); j++) {
+    //     for(int k = 0; k < firstSets[j].size() - 1; k++) {
+    //         cout << "HERE" << endl;
+    //         if(index(firstSets[j][k]) > index(firstSets[j][k + 1])) {
+    //             str = firstSets[j][k];
+    //             cout << str << endl;
+    //             firstSets[j][k] = firstSets[j][k + 1];
+    //             firstSets[j][k + 1] = str;
+    //         }
+    //     }
+    // }
 
+    // for(int i = 0; i < indexList.size(); i++) {
+    //     if(isInNonterminals(indexList[i])) {
+    //         cout << "FIRST(" << indexList[i] << ") = { ";
+    //         for(int j = 0; j < firstSets[i].size(); j++) {
+    //             if(j != firstSets[i].size() - 1) {
+    //                 cout << firstSets[i][j] << ", ";
+    //             }
+    //             else {
+    //                 cout << firstSets[i][j];
+    //             }
+    //         }
+    //         cout << " }" << endl;
+    //     }
+    // }
 
 }
-
-
-
-
 // void FollowSet(string variable, string set) {
 //     for(int i = 0; i < ruleList.size(); i++) {
 //         for(int j = 0; j < ruleList[i].rightHand.size(); j++) {
@@ -727,9 +834,11 @@ void CalculateFirstSets()
 //     }
 // }
 
-    // Task 4
-void CalculateFollowSets()
-{
+// Task 4
+void CalculateFollowSets(){
+
+    CalculatingFirst();
+
     // 1) FOLLOW(S) = { $ }   // where S is the starting Non-Terminal
 
     // 2) If A -> pBq is a production, where p, B and q are any grammar symbols,
@@ -741,68 +850,168 @@ void CalculateFollowSets()
     // then FOLLOW(B) contains { FIRST(q) – Є } U FOLLOW(A) 
 
 
-    vector<vector<string> > followSets(Nonterminals.size(), vector<string>(1));
+    //empty string vector to push into each slot of followSets
+    vector<string> set;
+    //initialize the followSets, corresponds with indexList
+    for(int i = 0; i < indexList.size(); i++) {
+        followSets.push_back(set);
+    }
+    //now we have a vector of vectorofstrings for each nonterminal, how they appear in the grammar
 
-    // for (int i = 0; i < Nonterminals.size(); i++) {
-    //     followSets[i] = std::vector<string>();
-    // }
 
     //  ----Step 1: Initialize follow set of start symbol----
-    followSets[0].push_back("$"); //this is for all nonterminals
+    //this is fine
+    for(int i = 0; i < indexList.size(); i++) {
+        if (isInNonterminals(indexList[i])){
+            followSets[i].push_back("$"); //should be third symbol... after # and $
+            break;
+        }
+    }
+
+
+    ///printing first sets jsut to reference 
+    for (int i = 0; i < indexList.size(); i++){
+        if (isInNonterminals(indexList[i])){
+            cout << "FIRST(" << indexList[i] << ") = { ";
+            for (int j = 0; j < firstSets[i].size(); j++){
+                cout << firstSets[i][j];
+                if (j != firstSets[i].size() - 1){
+                    cout <<  ", ";
+                }
+            }
+            cout << " }";
+            cout << endl;
+        }
+    }
 
     //  ----Step 2: if S-> A B, first of B into follow of A----
     //for each rule
     for (int i = 0; i < ruleList.size(); i++) {
         //iterator
         Rule rule = ruleList[i];
-        //for each rhs - reverse
-        for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
-            //if this rhs is nonterminal
-            if (isInNonterminals(rule.rightHand[j].lexeme)) {
+        //get the last rhs symbol
+        string lastRHS = ruleList[i].rightHand[rule.rightHand.size() - 1].lexeme;
+
+        //if this lastrhs is a terminal, loop through nonterminalrhs that have # in first sets
+        //and add to their follows
+        if (isInTerminal(lastRHS)){ //if this rhs is terminal - keep adding to nonterminals that have # in first set
+            //the terminal for ease
+            string thisTerminal = rule.rightHand[j].lexeme;
+            //get rhs indexList index for ease
+            int indexLastRHS = index(lastRHS);
+
+            int k = 1; //since terminal, start with second to last one
+            //while in bounds, is a nonterminal, and has # in first set
+            while((rule.rightHand.size()-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+                //the previous nonterminal index
+                int indexPreviousRHS = index(rule.rightHand[rule.rightHand.size()-k].lexeme);
+
+                //add this RHS terminal into previous RHS nonterminal if not already in there
+                if (!isElement(thisTerminal, followSets[indexPreviousRHS])){
+                    followSets[indexPreviousRHS].push_back(thisTerminal);
+                }
+                k++;
+            }
+        }
+        //else it is a nonterminal
+        else if (isInNonterminals(lastRHS)){
+
+            //for each rhs starting from the back, 
+            for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
+                
+                //going back counter
                 int k = 1;
-                //the rule number that this rhs is defined at
-                int index = goToRuleLeft(rule.rightHand[j-k].lexeme);
-                //thisRHS in LSH, and that rule's rhs == empty
-                //while righthand[j-k] doesnt have epsilon and is a nonterminal
-                while (isInNonterminals(rule.rightHand[j-k].lexeme) && 
-                    ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme)].rightHand.size() == 0){
-                    //followSets[i].push_back() <-first set of rule.rightHand[j]
-                    k++;
-                }
-                while (isInNonterminals(rule.rightHand[j-k].lexeme)){
-                    int p = 1;
-                    while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
-                    && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
-                        //finding rule that has epsilon (make sure stay in bounds)
-                        p++;
-                    }
-                    if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
-                        //if it rhs empty = epsilon, then add this first set into A
-                        //followSets[i].push_back() <-first set of rule.rightHand[j]
-                        k++;
-                    }
-                }
-                    
+                //this rhs' first
+                int indexFirst = index(rule.rightHand[j].lexeme);
+                //while in bounds, and previous is nontemrminal, and this RHS's first set has #
+                while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+
 
             }
-            if (isInTerminal(rule.rightHand[j].lexeme)) {
-                //if a terminal add to previous RHS while it can generate epsilons
+            
+        }
+
+        //for each rhs - starting from back
+        for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
+
+            //if this rhs is nonterminal, put this nonterminal into previous nonterminal
+            if (isInNonterminals(rule.rightHand[j].lexeme)) {
+                //rightHand[j] is THIS rhs
+                //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a nonterminal
+
+                //going back counter
                 int k = 1;
-                //while the rhs is non terminal
-                while (isInNonterminals(rule.rightHand[j-k].lexeme)){
-                    int p = 1;
-                    while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
-                    && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
-                        //finding rule that has epsilon (make sure stay in bounds)
-                        p++;
-                    }
-                    if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
-                        //if it rhs empty = epsilon, then add this terminal into A
-                        followSets[i].push_back(rule.rightHand[j-k].lexeme);
-                        k++;
-                    }
+                //this rhs' first
+                int indexFirst = index(rule.rightHand[j].lexeme);
+                //while in bounds, and previous is nontemrminal, and this RHS's first set has #
+                while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+                    //the previous one's follow set index
+                    int indexFollow = index(rule.rightHand[j-k].lexeme);
+                    //put entire first of this nonterminal, into this follow of previous nonterminals(s)
+                    addToSet(followSets[indexFollow], firstSets[indexFirst]);     //already checks for repeats            
+                    k++;
                 }
+                // //thisRHS in LSH, and that rule's rhs == empty
+                // //while righthand[j-k] doesnt have epsilon and is a nonterminal
+                // while (isInNonterminals(rule.rightHand[j-k].lexeme) && 
+                //     ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme)].rightHand.size() == 0){ //the nonterminal(s) part
+                //     //the previous one's follow set index
+                //     int indexFollow = index(rule.rightHand[j-k].lexeme);
+                //     //put first of this nonterminal, into follow of previous nonterminals(s)
+                //     followSets[indexFollow].push_back(firstSets[indexFirst]);                    
+                //     k++;
+                // }
+                // while (isInNonterminals(rule.rightHand[j-k].lexeme)){
+                //     int p = 1;
+                //     while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
+                //     && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
+                //         //the previous one's follow set index
+                //         int indexFollow = index(rule.rightHand[j-k].lexeme);
+                //         //finding rule that has epsilon (make sure stay in bounds)
+                //         p++;
+                //     }
+                //     if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
+                //         //if it rhs empty = epsilon, then add this first set into A
+                //         //followSets[i].push_back() <-first set of rule.rightHand[j]
+                //         k++;
+                //     }
+                // }
             }
+
+            //if this rhs is terminal - keep adding to nonterminals that have # in first set
+            // else if (isInTerminal(rule.rightHand[j].lexeme)) {
+            //     string thisTerminal = rule.rightHand[j].lexeme;
+            //     //rightHand[j] is THIS rhs
+            //     //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a terminal
+
+            //     //going back counter
+            //     int k = 1;
+            //     //while in bounds, PREVIOUS rhs is a nonterminal, and this RHS's first set has #
+
+            //     //put B into A (B is terminal and A is nonterminal)
+            //     while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && isElement("#", firstSets[index(rule.rightHand[j-k].lexeme)])){
+            //         //the previous one's follow set index
+            //         int indexPreviousRHS = index(rule.rightHand[j-k].lexeme);
+            //         //add this RHS terminal into previous RHS nonterminal if not already in there
+            //         if (!isElement(thisTerminal, followSets[indexPreviousRHS])){
+            //             followSets[indexPreviousRHS].push_back(thisTerminal);
+            //         }
+            //         k++;
+            //     }
+            //     // while (isInNonterminals(rule.rightHand[j-k].lexeme)){
+            //     //     int p = 1;
+            //     //     while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
+            //     //     && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
+            //     //         //finding rule that has epsilon (make sure stay in bounds)
+            //     //         p++;
+            //     //     }
+            //     //     if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
+            //     //         //if it rhs empty = epsilon, then add this terminal into A
+            //     //         followSets[i].push_back(rule.rightHand[j-k].lexeme);
+            //     //         k++;
+            //     //     }
+            //     // }
+            // }
         }
     }
 
@@ -815,31 +1024,21 @@ void CalculateFollowSets()
         for (int j = rule.rightHand.size() - 1; j >= 0; j--) {
             //if this rhs is nonterminal
             if (isInNonterminals(rule.rightHand[j].lexeme)) {
-
-                //last rhs is non terminal
-                //while nonterminal and j-k has epsilon 
-
-
-                int k = 1;
-                //the rule number that this rhs is defined at
-                int index = goToRuleLeft(rule.rightHand[j-k].lexeme);
+                //rightHand[j] is THIS rhs
+                //rightHand[j-k] is PREVIOUS rhs rule, in this case it is a nonterminal
+                //going back counter
+                int k = 0; //start from very last rhs first
                 //thisRHS in LSH, and that rule's rhs != empty
                 //while righthand[j-k] doesnt have epsilon and is a nonterminal
-                while (isInNonterminals(rule.rightHand[j-k].lexeme)){
-                    int p = 1;
-                    while (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() != 0 
-                    && (goToRuleLeft(rule.rightHand[j-k].lexeme) + p) > ruleList.size()){
-                        //finding rule that has epsilon (make sure stay in bounds)
-                        p++;
-                    }
-                    if (ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme) + p].rightHand.size() == 0){
-                        //if it rhs empty = epsilon, then add this terminal into A
-                        //followSets[j].push_back() <-follow set of rule.rightHand[j-k]
-                        k++;
-                    }
+                while((j-k) >= 0 && isInNonterminals(rule.rightHand[j-k].lexeme) && ruleList[goToRuleLeft(rule.rightHand[j-k].lexeme)].rightHand.size() == 0){
+                    //index for this lhs
+                    int indexFollowLHS = index(rule.leftHand.lexeme);
+                    //index for this iterating rhs
+                    int indexFollowRHS = index(rule.rightHand[j-k].lexeme);
+                    //add follow of LHS into follow of RHS
+                    addToSet(followSets[indexFollowRHS], followSets[indexFollowLHS]);
+                    k++;
                 }
-                    
-
             }
             if (isInTerminal(rule.rightHand[j].lexeme)) {
                 break;
@@ -847,11 +1046,19 @@ void CalculateFollowSets()
         }
     }
 
-    for (int i = 0; i < followSets.size(); i++){
-        for (int j = 0; j < followSets.size(); j++){
-            cout << followSets[i][j] << " ";
+    cout << "   ----END FOLLOW SETS----" << endl;
+    for (int i = 0; i < indexList.size(); i++){
+        if (isInNonterminals(indexList[i])){
+            cout << "FOLLOW(" << indexList[i] << ") = "; // = { 
+            for (int j = 0; j < followSets[i].size(); j++){
+                cout << followSets[i][j];
+                if (j != followSets[i].size() - 1){
+                    cout <<  ", ";
+                }
+            }
+            //cout << " }";
+            cout << endl;
         }
-        cout << endl;
     }
 }
 
